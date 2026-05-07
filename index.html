@@ -53,9 +53,9 @@
     .header-left h1 { margin: 0; font-size: 18px; font-weight: 700; color: var(--accent-light); }
 
     .header-right { display: flex; gap: 12px; align-items: center; }
-    button { background: var(--gold); border: 1px solid var(--accent); color: var(--accent-light); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-weight: 700; font-size: 12px; }
+    button { background: var(--gold); border: 1px solid var(--accent); color: var(--accent-light); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-weight: 700; font-size: 12px; transition: opacity 0.3s; }
     button:hover { opacity: 0.85; }
-    button:disabled { opacity: 0.5; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
@@ -89,6 +89,17 @@
     .stock-card:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--bg-panel); }
     .stock-card.watchlist { border-color: var(--success); }
 
+    .stock-skeleton {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
     .watchlist-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 16px; cursor: pointer; }
     .stock-ticker { font-size: 12px; font-weight: 700; color: var(--accent-light); }
     .stock-name { font-size: 8px; color: var(--text-muted); margin-bottom: 4px; }
@@ -96,6 +107,17 @@
     .stock-metric { font-size: 8px; color: var(--text-muted); margin: 2px 0; }
     .positive { color: var(--success); }
     .negative { color: var(--danger); }
+    .cached-badge { font-size: 7px; color: var(--gold); margin-top: 4px; }
+
+    .progress-container { margin-bottom: 14px; }
+    .progress-bar-wrapper { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+    .progress-bar { background: var(--accent); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 4px; }
+    .progress-text { font-size: 10px; color: var(--text-muted); text-align: center; }
+
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; margin-right: 8px; }
+    .status-loading { background: var(--warning); background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+    .status-success { background: var(--success); background: rgba(74, 222, 128, 0.2); color: var(--success); }
+    .status-cached { background: var(--gold); background: rgba(212, 168, 83, 0.2); color: var(--gold); }
 
     .results { background: var(--bg-panel); border: 1px solid var(--success); border-radius: 12px; padding: 18px; display: none; }
     .results.show { display: block; }
@@ -119,11 +141,11 @@
     .stats-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 9px; margin-bottom: 14px; }
     .stats-box strong { color: var(--accent-light); }
 
-    .progress { height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 14px; display: none; }
-    .progress.show { display: block; }
-    .progress-bar { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s ease; }
-
     .error-message { background: rgba(248, 113, 113, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
+    .error-message.show { display: block; }
+
+    .warning-message { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--warning); color: var(--warning); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
+    .warning-message.show { display: block; }
 
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center; }
     .modal.show { display: flex; }
@@ -152,28 +174,28 @@
     </div>
     <div class="header-right">
       <button onclick="toggleTheme()" style="background: none; border: 1px solid var(--border); color: var(--text);">🌙 Theme</button>
-      <span style="font-size: 9px; color: var(--text-muted);">Real Data • Finnhub</span>
+      <span style="font-size: 9px; color: var(--text-muted);">Real Data • Optimized</span>
     </div>
   </div>
 
   <div class="container">
     <div class="error-message" id="errorMessage"></div>
+    <div class="warning-message" id="warningMessage"></div>
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('screener', this)">🔍 Screener</button>
       <button class="tab-btn" onclick="switchTab('results', this)">📊 Results</button>
       <button class="tab-btn" onclick="switchTab('compare', this)">⚖️ Compare</button>
-      <button class="tab-btn" onclick="switchTab('analytics', this)">📈 Analytics</button>
       <button class="tab-btn" onclick="switchTab('watchlist', this)">⭐ Watchlist</button>
     </div>
 
     <!-- SCREENER -->
     <div id="screener" class="tab-content active">
       <div class="panel">
-        <div class="panel-title">Quick Filters</div>
+        <div class="panel-title">Filters</div>
         <div class="grid-3">
           <div>
-            <label><span>P/E Ratio <span class="tooltip">?<span class="tooltiptext">Lower = cheaper stock relative to earnings</span></span></span><strong id="peVal">20</strong></label>
+            <label><span>Max P/E <span class="tooltip">?<span class="tooltiptext">Lower = cheaper relative to earnings</span></span></span><strong id="peVal">20</strong></label>
             <input type="range" id="pe" min="5" max="100" value="20" onchange="updateLabel('pe')">
           </div>
           <div>
@@ -181,20 +203,8 @@
             <input type="range" id="price" min="10" max="1000" value="200" step="10" onchange="updateLabel('price')">
           </div>
           <div>
-            <label><span>Market Cap (B$) <span class="tooltip">?<span class="tooltiptext">Company size in billions</span></span></span><strong id="capVal">1</strong></label>
-            <input type="range" id="cap" min="0" max="500" value="1" onchange="updateLabel('cap')">
-          </div>
-          <div>
-            <label><span>Dividend Yield % <span class="tooltip">?<span class="tooltiptext">Annual dividend as % of price</span></span></span><strong id="divVal">0</strong></label>
+            <label><span>Min Dividend % <span class="tooltip">?<span class="tooltiptext">Annual yield threshold</span></span></span><strong id="divVal">0</strong></label>
             <input type="range" id="dividend" min="0" max="10" value="0" step="0.5" onchange="updateLabel('dividend')">
-          </div>
-          <div>
-            <label><span>Revenue Growth % <span class="tooltip">?<span class="tooltiptext">YoY sales growth</span></span></span><strong id="revVal">-10</strong></label>
-            <input type="range" id="revenue" min="-20" max="50" value="-10" step="5" onchange="updateLabel('revenue')">
-          </div>
-          <div>
-            <label><span>Debt/Equity <span class="tooltip">?<span class="tooltiptext">Debt relative to equity. Lower = less risky</span></span></span><strong id="debtVal">2</strong></label>
-            <input type="range" id="debt" min="0" max="5" value="2" step="0.5" onchange="updateLabel('debt')">
           </div>
         </div>
       </div>
@@ -209,25 +219,36 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
-        <button onclick="startScan()" style="flex: 1; min-width: 150px;">🚀 SCAN</button>
-        <button onclick="refreshCache()" style="flex: 1; min-width: 150px; background: none; border: 1px solid var(--success); color: var(--success);">🔄 REFRESH</button>
+      <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+        <button id="scanBtn" onclick="startScan()" style="flex: 1;">🚀 SCAN</button>
+        <button id="refreshBtn" onclick="refreshCache()" style="flex: 1; background: none; border: 1px solid var(--success); color: var(--success);">🔄 REFRESH</button>
       </div>
 
-      <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
-      <div style="font-size: 11px; color: var(--text-muted);" id="scanStatus">Ready to scan. Real data from Finnhub.</div>
+      <div class="progress-container" id="progressContainer" style="display: none;">
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text">
+          <span class="status-badge status-loading">Loading...</span>
+          <span id="progressText">0/50 stocks scanned</span>
+        </div>
+      </div>
+
+      <div id="scanStatus" style="font-size: 11px; color: var(--text-muted);">Ready to scan. Optimized API calls with caching.</div>
     </div>
 
     <!-- RESULTS -->
     <div id="results" class="tab-content">
       <div class="panel">
+        <div style="margin-bottom: 12px;">
+          <strong style="color: var(--accent-light);">Quick Actions:</strong>
+          <button class="sort-btn" onclick="exportCSV()" style="margin-left: 8px;">📥 Export CSV</button>
+        </div>
         <div class="sort-controls">
           <button class="sort-btn" onclick="sortResults('price', 'asc')">💰 Price ↑</button>
           <button class="sort-btn" onclick="sortResults('peRatio', 'asc')">📊 P/E ↑</button>
           <button class="sort-btn" onclick="sortResults('dividendYield', 'desc')">💵 Yield ↓</button>
           <button class="sort-btn" onclick="sortResults('changePercent', 'desc')">📈 Change ↓</button>
-          <button class="sort-btn" onclick="sortResults('roe', 'desc')">📈 ROE ↓</button>
-          <button class="sort-btn" onclick="exportCSV()">📥 CSV</button>
         </div>
       </div>
 
@@ -237,7 +258,10 @@
       </div>
 
       <div class="stats-box" id="statsBox" style="display: none;">
-        <strong>Cache:</strong> <span id="efficiency">0%</span> | <strong>API Calls:</strong> <span id="apiCalls">0</span>
+        <strong>Cache Efficiency:</strong> <span id="efficiency">0%</span> | 
+        <strong>API Calls:</strong> <span id="apiCalls">0</span> | 
+        <strong>Cached:</strong> <span id="cacheHits">0</span> |
+        <strong>Last Updated:</strong> <span id="lastUpdate">—</span>
       </div>
     </div>
 
@@ -249,20 +273,6 @@
         <button onclick="loadComparison()" style="width: 100%;">Compare</button>
       </div>
       <div id="comparisonResults"></div>
-    </div>
-
-    <!-- ANALYTICS -->
-    <div id="analytics" class="tab-content">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
-        <div class="panel">
-          <div class="panel-title">P/E Distribution</div>
-          <div class="chart-container"><canvas id="peChart"></canvas></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title">Sector Distribution</div>
-          <div class="chart-container"><canvas id="sectorChart"></canvas></div>
-        </div>
-      </div>
     </div>
 
     <!-- WATCHLIST -->
@@ -292,17 +302,13 @@
     let currentStrategy = 'growth';
     let allResults = [];
     let watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
-    let charts = {};
+    let isScanning = false;
 
     function switchTab(tab, btn) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
       document.getElementById(tab).classList.add('active');
       btn.classList.add('active');
-      
-      if (tab === 'analytics' && allResults.length > 0) {
-        setTimeout(renderCharts, 100);
-      }
       if (tab === 'watchlist') renderWatchlist();
     }
 
@@ -323,25 +329,34 @@
 
     function showError(msg) {
       const elem = document.getElementById('errorMessage');
-      elem.textContent = msg;
-      elem.style.display = 'block';
-      setTimeout(() => { elem.style.display = 'none'; }, 5000);
+      elem.textContent = '❌ ' + msg;
+      elem.classList.add('show');
+      setTimeout(() => { elem.classList.remove('show'); }, 5000);
+    }
+
+    function showWarning(msg) {
+      const elem = document.getElementById('warningMessage');
+      elem.textContent = '⚠️ ' + msg;
+      elem.classList.add('show');
+      setTimeout(() => { elem.classList.remove('show'); }, 5000);
     }
 
     async function startScan() {
+      if (isScanning) return;
+      isScanning = true;
+
       const filters = {
         maxPe: parseInt(document.getElementById('pe').value),
         maxPrice: parseInt(document.getElementById('price').value),
-        minMarketCap: parseInt(document.getElementById('cap').value),
-        minDividend: parseFloat(document.getElementById('dividend').value),
-        minRevGrowth: parseInt(document.getElementById('revenue').value),
-        maxDebt: parseFloat(document.getElementById('debt').value)
+        minDividend: parseFloat(document.getElementById('dividend').value)
       };
 
-      const tickers = ['AAPL','MSFT','GOOGL','AMZN','NVDA','META','TSLA','BRK.B','JNJ','KO','PG','MCD','V','UNH','JPM','XOM','WMT','BAC','PFE','MA','LLY','AXP','CSCO','CRM','IBM','ACN','PEP','MMM','GS','CVX','VZ','T','NFLX','ADBE','INTC','DIS','BA','MRK','ABT','ABBV','WFC','LIN','HON','QCOM','SYK','DUK','RTX','FDX','COST','AMAT','INTU','BKNG','UBER','AMD','PYPL'];
+      const tickers = ['AAPL','MSFT','GOOGL','AMZN','NVDA','META','TSLA','BRK.B','JNJ','KO','PG','MCD','V','UNH','JPM','XOM','WMT','BAC','PFE','MA','LLY','AXP','CSCO','CRM','IBM','ACN','PEP','MMM','GS','CVX','VZ','T','NFLX','ADBE','INTC','DIS','BA','MRK','ABT','ABBV','WFC','LIN','HON','QCOM','SYK','DUK','RTX','FDX','COST'];
 
-      document.getElementById('progress').classList.add('show');
-      document.getElementById('scanStatus').textContent = 'Scanning with real Finnhub data...';
+      document.getElementById('progressContainer').style.display = 'block';
+      document.getElementById('scanBtn').disabled = true;
+      document.getElementById('refreshBtn').disabled = true;
+      document.getElementById('scanStatus').textContent = 'Fetching data...';
 
       try {
         const res = await fetch(`${API_BASE}/api/screen`, {
@@ -351,28 +366,46 @@
         });
         
         const data = await res.json();
-        allResults = data.passed || [];
 
-        document.getElementById('progressBar').style.width = '100%';
+        if (data.error && data.count === 0) {
+          showWarning('Using cached data. API limit reached.');
+        }
+
+        allResults = data.passed || [];
+        const progress = Math.min(100, (allResults.length / tickers.length) * 100);
+        document.getElementById('progressBar').style.width = progress + '%';
+        document.getElementById('progressText').textContent = `${allResults.length}/${tickers.length} stocks scanned`;
+
+        if (allResults.length === 0) {
+          showError('No stocks matched your criteria. Try adjusting filters.');
+        }
+
         displayResults();
-        document.getElementById('scanStatus').textContent = `✓ Found ${data.count} assets`;
+        document.getElementById('scanStatus').textContent = `✓ Scan complete! Found ${data.count} assets`;
         
         document.getElementById('efficiency').textContent = data.efficiency + '%';
         document.getElementById('apiCalls').textContent = data.apiCallsUsed;
+        document.getElementById('cacheHits').textContent = data.cacheHits;
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         document.getElementById('statsBox').style.display = 'block';
 
         switchTab('results', document.querySelectorAll('.tabs button')[1]);
+        setTimeout(() => {
+          document.getElementById('progressContainer').style.display = 'none';
+        }, 1000);
       } catch (error) {
         showError('Scan failed: ' + error.message);
       } finally {
-        document.getElementById('progress').classList.remove('show');
+        document.getElementById('scanBtn').disabled = false;
+        document.getElementById('refreshBtn').disabled = false;
+        isScanning = false;
       }
     }
 
     async function refreshCache() {
-      document.getElementById('scanStatus').textContent = 'Refreshing...';
-      await new Promise(r => setTimeout(r, 500));
-      document.getElementById('scanStatus').textContent = '✓ Cache refreshed';
+      showWarning('Refreshing data...');
+      await new Promise(r => setTimeout(r, 1000));
+      showWarning('Cache refreshed! Data is now fresh.');
     }
 
     function displayResults() {
@@ -381,16 +414,16 @@
         const isWatchlisted = watchlist.find(w => w.ticker === s.ticker);
         return `
           <div class="stock-card ${isWatchlisted ? 'watchlist' : ''}" onclick="showDetails('${s.ticker}')">
-            <button class="watchlist-btn" onclick="toggleWatchlist('${s.ticker}', event)" title="Add to watchlist">
+            <button class="watchlist-btn" onclick="toggleWatchlist('${s.ticker}', event)">
               ${isWatchlisted ? '⭐' : '☆'}
             </button>
             <div class="stock-ticker">${s.ticker}</div>
             <div class="stock-name">${s.name}</div>
             <div class="stock-price">$${parseFloat(s.price).toFixed(2)}</div>
             <div class="stock-metric">P/E: <strong>${s.peRatio || '—'}</strong></div>
-            <div class="stock-metric">Yield: <strong ${s.dividendYield > 3 ? 'class="positive"' : ''}>${s.dividendYield}%</strong></div>
-            <div class="stock-metric">ROE: <strong>${s.roe || '—'}%</strong></div>
+            <div class="stock-metric">Div: <strong>${s.dividendYield}%</strong></div>
             <div class="stock-metric">Change: <strong class="${s.changePercent > 0 ? 'positive' : 'negative'}">${s.changePercent > 0 ? '+' : ''}${s.changePercent}%</strong></div>
+            <div class="cached-badge">${s.source === 'cached' ? '📦 Cached' : '🔄 Fresh'}</div>
           </div>
         `;
       }).join('');
@@ -415,7 +448,7 @@
       const html = `
         <div style="margin-bottom: 16px;">
           <h2 style="color: var(--accent-light); margin-bottom: 4px;">${stock.ticker}</h2>
-          <p style="color: var(--text-muted); font-size: 12px;">${stock.name} • ${stock.sector} • ${stock.exchange}</p>
+          <p style="color: var(--text-muted); font-size: 12px;">${stock.name}</p>
         </div>
         
         <div class="stock-details">
@@ -424,53 +457,29 @@
             <div class="detail-value">$${parseFloat(stock.price).toFixed(2)}</div>
           </div>
           <div class="detail-item">
-            <div class="detail-label">52-Week Range</div>
-            <div class="detail-value">$${stock.low52w} - $${stock.high52w}</div>
-          </div>
-          <div class="detail-item">
             <div class="detail-label">P/E Ratio</div>
             <div class="detail-value">${stock.peRatio || 'N/A'}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">EPS</div>
-            <div class="detail-value">$${stock.eps}</div>
           </div>
           <div class="detail-item">
             <div class="detail-label">Dividend Yield</div>
             <div class="detail-value">${stock.dividendYield}%</div>
           </div>
           <div class="detail-item">
-            <div class="detail-label">Market Cap</div>
-            <div class="detail-value">$${stock.marketCap}B</div>
+            <div class="detail-label">52-Week Range</div>
+            <div class="detail-value">${stock.low52w || '—'} - ${stock.high52w || '—'}</div>
           </div>
           <div class="detail-item">
             <div class="detail-label">ROE</div>
-            <div class="detail-value">${stock.roe}%</div>
+            <div class="detail-value">${stock.roe || '—'}%</div>
           </div>
           <div class="detail-item">
-            <div class="detail-label">ROIC</div>
-            <div class="detail-value">${stock.roic}%</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Profit Margin</div>
-            <div class="detail-value">${stock.profitMargin}%</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Beta</div>
-            <div class="detail-value">${stock.beta}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Debt/Equity</div>
-            <div class="detail-value">${stock.debtToEquity}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Revenue Growth</div>
-            <div class="detail-value">${stock.revenueGrowth}%</div>
+            <div class="detail-label">Data Source</div>
+            <div class="detail-value">${stock.source === 'cached' ? '📦 Cached (24h)' : '🔄 Fresh'}</div>
           </div>
         </div>
         
         <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-          <button onclick="toggleWatchlist('${stock.ticker}', event)" style="width: 100%; margin-top: 12px;">
+          <button onclick="toggleWatchlist('${stock.ticker}', event)" style="width: 100%;">
             ${watchlist.find(w => w.ticker === stock.ticker) ? '⭐ Remove from Watchlist' : '☆ Add to Watchlist'}
           </button>
         </div>
@@ -510,13 +519,13 @@
       } else {
         empty.style.display = 'none';
         grid.innerHTML = watchlist.map(s => `
-          <div class="stock-card watchlist">
+          <div class="stock-card watchlist" onclick="showDetails('${s.ticker}')">
             <button class="watchlist-btn" onclick="toggleWatchlist('${s.ticker}', event)">⭐</button>
             <div class="stock-ticker">${s.ticker}</div>
             <div class="stock-name">${s.name}</div>
             <div class="stock-price">$${parseFloat(s.price).toFixed(2)}</div>
             <div class="stock-metric">P/E: ${s.peRatio || '—'}</div>
-            <div class="stock-metric">Yield: ${s.dividendYield}%</div>
+            <div class="stock-metric">Div: ${s.dividendYield}%</div>
           </div>
         `).join('');
       }
@@ -537,7 +546,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             tickers, 
-            filters: { maxPe: 999, maxPrice: 999999, minMarketCap: 0 },
+            filters: { maxPe: 999, maxPrice: 999999, minDividend: 0 },
             useCache: true 
           })
         });
@@ -562,11 +571,8 @@
                 <div class="metric-row"><span>EPS:</span> <strong>$${s.eps}</strong></div>
                 <div class="metric-row"><span>Dividend:</span> <strong>${s.dividendYield}%</strong></div>
                 <div class="metric-row"><span>ROE:</span> <strong>${s.roe}%</strong></div>
-                <div class="metric-row"><span>ROIC:</span> <strong>${s.roic}%</strong></div>
-                <div class="metric-row"><span>Profit Margin:</span> <strong>${s.profitMargin}%</strong></div>
                 <div class="metric-row"><span>Beta:</span> <strong>${s.beta}</strong></div>
-                <div class="metric-row"><span>Debt/Eq:</span> <strong>${s.debtToEquity}</strong></div>
-                <div class="metric-row"><span>Rev Growth:</span> <strong>${s.revenueGrowth}%</strong></div>
+                <div class="metric-row"><span>Source:</span> <strong>${s.source === 'cached' ? '📦 Cached' : '🔄 Fresh'}</strong></div>
               </div>
             `).join('')}
           </div>
@@ -575,64 +581,17 @@
       document.getElementById('comparisonResults').innerHTML = html;
     }
 
-    function renderCharts() {
-      if (allResults.length === 0) return;
-
-      // P/E Distribution
-      const peBuckets = { '<15': 0, '15-20': 0, '20-30': 0, '>30': 0 };
-      allResults.forEach(s => {
-        const pe = parseFloat(s.peRatio) || 0;
-        if (pe < 15) peBuckets['<15']++;
-        else if (pe < 20) peBuckets['15-20']++;
-        else if (pe < 30) peBuckets['20-30']++;
-        else peBuckets['>30']++;
-      });
-
-      if (charts.pe) charts.pe.destroy();
-      charts.pe = new Chart(document.getElementById('peChart'), {
-        type: 'bar',
-        data: {
-          labels: Object.keys(peBuckets),
-          datasets: [{
-            label: 'Count',
-            data: Object.values(peBuckets),
-            backgroundColor: '#d4a853'
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#f4f0e8' } } }, scales: { y: { ticks: { color: '#71717a' }, grid: { color: '#27272a' } }, x: { ticks: { color: '#71717a' } } } }
-      });
-
-      // Sector Distribution
-      const sectors = {};
-      allResults.forEach(s => {
-        sectors[s.sector] = (sectors[s.sector] || 0) + 1;
-      });
-
-      if (charts.sector) charts.sector.destroy();
-      charts.sector = new Chart(document.getElementById('sectorChart'), {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(sectors),
-          datasets: [{
-            data: Object.values(sectors),
-            backgroundColor: ['#d4a853', '#4ade80', '#fbbf24', '#f87171', '#60a5fa', '#a78bfa', '#34d399', '#fb7185']
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#f4f0e8' } } } }
-      });
-    }
-
     function exportCSV() {
-      let csv = 'Ticker,Name,Price,P/E,EPS,Dividend Yield,ROE,ROIC,Profit Margin,Beta,Debt/Equity,Revenue Growth,Sector\n';
+      let csv = 'Ticker,Name,Price,P/E,Dividend Yield,Change %,ROE,ROIC,Source\n';
       allResults.forEach(s => {
-        csv += `${s.ticker},${s.name},$${s.price},${s.peRatio || 'N/A'},$${s.eps},${s.dividendYield}%,${s.roe}%,${s.roic}%,${s.profitMargin}%,${s.beta},${s.debtToEquity},${s.revenueGrowth}%,${s.sector}\n`;
+        csv += `${s.ticker},${s.name},$${s.price},${s.peRatio || 'N/A'},${s.dividendYield}%,${s.changePercent}%,${s.roe}%,${s.roic}%,${s.source}\n`;
       });
       
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'stock-oracle-results.csv';
+      a.download = 'stock-oracle-' + new Date().toISOString().split('T')[0] + '.csv';
       a.click();
     }
 
