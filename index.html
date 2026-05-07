@@ -122,6 +122,9 @@
     .score-low { color: #f87171; }
     .footer { margin-top: 20px; font-size: 9px; color: #71717a; text-align: center; border-top: 1px solid #1d1d20; padding-top: 12px; }
     .error-message { background: #1a0606; border: 1px solid #f87171; color: #f87171; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
+    .preset-filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .preset-btn { background: #131316; border: 1px solid #27272a; color: #71717a; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 10px; }
+    .preset-btn:hover { border-color: #d4a853; color: #edc97a; }
   </style>
 </head>
 <body>
@@ -149,27 +152,41 @@
 
     <div class="panel">
       <div class="panel-title">Screening Filters</div>
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-size: 10px; color: #7a5f2a; margin-bottom: 8px;">Quick Presets:</div>
+        <div class="preset-filters">
+          <button class="preset-btn" onclick="applyPreset('undervalued')">🎯 Undervalued (P/E < 15)</button>
+          <button class="preset-btn" onclick="applyPreset('value')">💎 Value (P/E < 20)</button>
+          <button class="preset-btn" onclick="applyPreset('growth')">📈 Growth (P/E < 30)</button>
+          <button class="preset-btn" onclick="applyPreset('reset')">↺ Reset to Default</button>
+        </div>
+      </div>
+
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
         <div>
           <label style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #71717a;">
             <span>Max P/E Ratio</span>
-            <span style="color: #edc97a; font-weight: 700;" id="peValue">30</span>
+            <span style="color: #edc97a; font-weight: 700;" id="peValue">20</span>
           </label>
-          <input type="range" id="peSlider" min="5" max="100" value="30" step="1">
+          <input type="range" id="peSlider" min="5" max="100" value="20" step="1">
+          <div style="font-size: 9px; color: #7a5f2a; margin-top: 4px;">Lower = more undervalued</div>
         </div>
         <div>
           <label style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #71717a;">
             <span>Max Price ($)</span>
-            <span style="color: #edc97a; font-weight: 700;" id="priceValue">500</span>
+            <span style="color: #edc97a; font-weight: 700;" id="priceValue">200</span>
           </label>
-          <input type="range" id="priceSlider" min="10" max="1000" value="500" step="10">
+          <input type="range" id="priceSlider" min="10" max="1000" value="200" step="10">
+          <div style="font-size: 9px; color: #7a5f2a; margin-top: 4px;">Affordable stocks</div>
         </div>
         <div>
           <label style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #71717a;">
             <span>Min Market Cap (B$)</span>
-            <span style="color: #edc97a; font-weight: 700;" id="capValue">0</span>
+            <span style="color: #edc97a; font-weight: 700;" id="capValue">1</span>
           </label>
-          <input type="range" id="capSlider" min="0" max="500" value="0" step="10">
+          <input type="range" id="capSlider" min="0" max="500" value="1" step="1">
+          <div style="font-size: 9px; color: #7a5f2a; margin-top: 4px;">Minimum size filter</div>
         </div>
       </div>
     </div>
@@ -216,23 +233,16 @@
         "FTNT","CHKP","DDOG","PSTG","MU","SK","SWKS","QRVO","XLNX","PLTR",
         "UNP","CSX","NSC","KSU","WAB","CP","CNI","GE","CAT","DE","CMI","FANG",
         "HON","LMT","BA","RTX","GD","NOC","TRI","SPY","QQQ","IWM",
+        "SPY","QQQ","DIA","IWM",
         // Europe - Germany DAX (20 stocks)
-        "SAP","SAP.DE","SIE.DE","SIE","MUV2.DE","BMW.DE","VOW3.DE","DBX.DE",
-        "EOAN.DE","HEI.DE","ALV.DE","DAI.DE","BAS.DE","BAYN.DE","LIN.DE",
+        "SAP.DE","SIE.DE","MUV2.DE","BMW.DE","VOW3.DE","DBX.DE","EOAN.DE",
+        "HEI.DE","ALV.DE","DAI.DE","BAS.DE","BAYN.DE","LIN.DE","SAP","SIE",
         // Europe - France CAC 40 (15 stocks)
-        "ASML.AS","OR.PA","SAN.PA","ENGI.PA","BNP.PA","TOTAL.PA","MC.PA",
-        "STLA.PA","OREP.PA","EDF.PA","NOKIA.HE","NOKIA1V.HE",
+        "OR.PA","SAN.PA","ENGI.PA","BNP.PA","TOTAL.PA","MC.PA","STLA.PA",
+        "OREP.PA","EDF.PA","NOKIA.HE","NOKIA1V.HE",
         // Europe - UK FTSE (20 stocks)
-        "ASML.AS","HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO",
-        "ANTM","BP","SHELL","TTE","RELX","LGEN","AZN","GSK","ULVR","PRU",
-        // Europe - Netherlands (10 stocks)
-        "ASML.AS","PHIA.AS","AKZA.AS","UNVR.AS","ING.AS","ABN.AS",
-        // Europe - Switzerland (15 stocks)
-        "NOVN.SW","ROG.SW","NESN.SW","RORGN.SW","NOVAN.SW","ABBN.SW",
-        "SCHN.SW","CLNN.SW","GIVN.SW","CFR.SW",
-        // Europe - Other (10 stocks)
-        "NOKIA.HE","ORSTED.CO","MAERSK.A","MAERSK.B","DANSKE.CO","NOVO.CO",
-        "CHR.CO","TELIA.ST","TELAB.SE","VOLV.B.ST",
+        "HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO","ANTM",
+        "BP","SHELL","TTE","RELX","LGEN","AZN","GSK","ULVR","PRU","WPP",
         // Canada - TSX (30 stocks)
         "RCI.TO","TRP.TO","BCE.TO","TD.TO","BNS.TO","RY.TO","CM.TO","BMO.TO",
         "SU.TO","CNQ.TO","CVE.TO","MEG.TO","XEO.TO","CPG.TO","PBA.TO","BIR.TO",
@@ -263,13 +273,11 @@
         // South Korea (10 stocks)
         "005930.KS","000660.KS","051910.KS","105560.KS","012330.KS",
         // Brazil (10 stocks)
-        "VALE3.SA","PETR4.SA","BBDC4.SA","ITUB4.SA","ABEV3.SA",
+        "VALE3.SA","PETR4.SA","BBDC4.SA","ITUB4.SA","ABEV3.SA","CSAN3.SA",
+        "WEGE3.SA","VVAR3.SA","BRFS3.SA","JBSS3.SA",
         // Mexico (5 stocks)
         "GFINBUR.MX","GMEXICOB.MX","ASEA.MX",
-        // Russia (5 stocks - limited by sanctions)
-        "ROSN.MM","SBER.MM",
         // Other emerging markets (20 stocks)
-        // Added total to reach 500+
         "INEO","VOD","ADS.DE","SIX.DE","BER.DE","IFX.DE","MRK.DE","FME.DE",
         "MTX.DE","BBVA.MC","IAG.MC","AENA.MC","AMS.MC","INGA.AS","PHARM.AS"
       ],
@@ -331,7 +339,7 @@
     };
 
     let currentUniverse = "All 500+ Global Stocks";
-    let filters = { pe: 30, price: 500, cap: 0 };
+    let filters = { pe: 20, price: 200, cap: 1 };
     let isScanning = false;
     let abortScan = false;
     let results = [];
@@ -341,6 +349,37 @@
       elem.textContent = msg;
       elem.style.display = "block";
       setTimeout(() => { elem.style.display = "none"; }, 5000);
+    }
+
+    function applyPreset(preset) {
+      switch(preset) {
+        case 'undervalued':
+          filters.pe = 15;
+          filters.price = 100;
+          filters.cap = 1;
+          break;
+        case 'value':
+          filters.pe = 20;
+          filters.price = 200;
+          filters.cap = 1;
+          break;
+        case 'growth':
+          filters.pe = 30;
+          filters.price = 300;
+          filters.cap = 0;
+          break;
+        case 'reset':
+          filters.pe = 20;
+          filters.price = 200;
+          filters.cap = 1;
+          break;
+      }
+      document.getElementById("peSlider").value = filters.pe;
+      document.getElementById("peValue").textContent = filters.pe;
+      document.getElementById("priceSlider").value = filters.price;
+      document.getElementById("priceValue").textContent = filters.price;
+      document.getElementById("capSlider").value = filters.cap;
+      document.getElementById("capValue").textContent = filters.cap;
     }
 
     function initUI() {
@@ -502,7 +541,7 @@
     function displayResults(data) {
       const grid = document.getElementById("stockGrid");
       grid.innerHTML = data.passed.map(s => {
-        const scoreClass = s.peRatio && s.peRatio < 20 ? "score-high" : s.peRatio && s.peRatio < 35 ? "score-mid" : "score-low";
+        const scoreClass = s.peRatio && s.peRatio < 15 ? "score-high" : s.peRatio && s.peRatio < 25 ? "score-mid" : "score-low";
         return `
           <div class="stock-card">
             <div class="stock-ticker">${s.ticker}</div>
@@ -510,7 +549,7 @@
             <div class="stock-metric">P/E: ${s.peRatio ? s.peRatio.toFixed(1) : "—"}</div>
             <div class="stock-metric">MCap: $${s.marketCap || "—"}B</div>
             <div class="stock-source">${s.source === 'cached' ? '📦 Cached' : '🔄 Fresh'}</div>
-            <div class="stock-score ${scoreClass}">${s.peRatio && s.peRatio < 20 ? "Undervalued" : s.peRatio && s.peRatio < 35 ? "Fair" : "Expensive"}</div>
+            <div class="stock-score ${scoreClass}">${s.peRatio && s.peRatio < 15 ? "✓ Undervalued" : s.peRatio && s.peRatio < 25 ? "~ Fair" : "✗ Expensive"}</div>
           </div>
         `;
       }).join("");
