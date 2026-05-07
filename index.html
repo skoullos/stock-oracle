@@ -85,6 +85,19 @@
       font-size: 11px;
     }
     .ticker-btn.active { background: #7a5f2a; border-color: #d4a853; color: #edc97a; }
+    .asset-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+    .asset-btn {
+      background: none;
+      border: 1px solid #27272a;
+      color: #71717a;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .asset-btn.active { background: #7a5f2a; border-color: #d4a853; color: #edc97a; }
     .strategy-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .strategy-btn {
       background: none;
@@ -124,8 +137,10 @@
       padding: 11px 12px;
       cursor: pointer;
     }
+    .stock-card.etf { border-color: #4ade80; }
     .stock-card:hover { transform: translateY(-2px); }
     .stock-ticker { font-size: 13px; font-weight: 700; color: #edc97a; margin-bottom: 3px; }
+    .stock-type { font-size: 8px; color: #4ade80; font-weight: 700; margin-bottom: 3px; }
     .stock-price { font-size: 12px; font-weight: 700; color: #f4f0e8; margin-bottom: 3px; }
     .stock-metric { font-size: 9px; color: #71717a; }
     .stock-source { font-size: 8px; color: #7a5f2a; margin-top: 5px; font-style: italic; }
@@ -147,20 +162,30 @@
       <span>Berkshire</span>
       <h1>Stock Oracle</h1>
     </div>
-    <p class="header-subtitle">Global Edition · 500+ Stocks · Investment Strategies · Smart Caching</p>
+    <p class="header-subtitle">Global Edition · 500+ Stocks + ETFs · Investment Strategies · Smart Caching</p>
   </div>
 
   <div class="container">
     <div class="error-message" id="errorMessage"></div>
 
     <div class="info-box">
-      🌍 <strong>Global stock screening with strategies:</strong> Screen 500+ stocks from all major exchanges. Find stocks for capital appreciation, dividends, or balanced investing. Data is cached for 24 hours!
+      🌍 <strong>Global stock & ETF screening with strategies:</strong> Screen 500+ stocks AND ETFs from all major exchanges. Find assets for capital appreciation, dividends, or balanced investing. Data is cached for 24 hours!
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Asset Class</div>
+      <div class="asset-toggle">
+        <button class="asset-btn active" onclick="selectAsset('stocks')">📈 Stocks</button>
+        <button class="asset-btn" onclick="selectAsset('etfs')">🎯 ETFs</button>
+        <button class="asset-btn" onclick="selectAsset('both')">⚖️ Both</button>
+      </div>
+      <div style="font-size: 9px; color: #7a5f2a;">Stocks: Individual companies | ETFs: Diversified funds</div>
     </div>
 
     <div class="panel">
       <div class="panel-title">Select Universe</div>
       <div class="ticker-buttons" id="universeButtons"></div>
-      <textarea id="customInput" placeholder="AAPL, SAP.DE, TCS.NS, ASML.AS, 0700.HK..." style="display: none;"></textarea>
+      <textarea id="customInput" placeholder="AAPL, SPY, QQQ, VTI, VTSAX..." style="display: none;"></textarea>
       <div style="font-size: 10px; color: #7a5f2a; margin-top: 8px;">📊 <span id="tickerCount">0</span> tickers selected</div>
     </div>
 
@@ -204,7 +229,7 @@
             <span style="color: #edc97a; font-weight: 700;" id="priceValue">200</span>
           </label>
           <input type="range" id="priceSlider" min="10" max="1000" value="200" step="10">
-          <div style="font-size: 9px; color: #7a5f2a; margin-top: 4px;">Affordable stocks</div>
+          <div style="font-size: 9px; color: #7a5f2a; margin-top: 4px;">Affordable assets</div>
         </div>
         <div>
           <label style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #71717a;">
@@ -233,7 +258,7 @@
     </div>
 
     <div class="results" id="results">
-      <div class="results-title">⭐ Results — <span id="resultCount">0</span> Stocks Matched Your Strategy</div>
+      <div class="results-title">⭐ Results — <span id="resultCount">0</span> Assets Matched Your Strategy</div>
       <div class="stock-grid" id="stockGrid"></div>
     </div>
 
@@ -246,46 +271,53 @@
     const API_BASE = window.location.origin;
     
     const UNIVERSES = {
-      "All 500+ Global Stocks": [
+      "All Stocks (500+)": [
         "AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","BRK.B","JNJ","KO",
         "PG","MCD","V","UNH","JPM","XOM","WMT","BAC","PFE","MA","LLY","AXP",
         "CSCO","AVGO","CRM","IBM","ACN","PEP","MMM","GS","AIG","CVX","CCI",
         "VZ","T","NFLX","ADBE","INTC","TJX","DIS","BA","MRK","ABT","ABBV",
         "WFC","LIN","HON","QCOM","SYK","DUK","SO","NEE","RTX","FDX","COST",
-        "AMAT","INTU","BKNG","SHOP","UBER","AMD","PYPL","SNPS","LRCX","KLAC",
-        "MARVELL","ISRG","VRTX","REGN","BIIB","ILMN","ASML","TMO","DXCM","ZM",
-        "COIN","RBLX","DASH","ABNB","NOW","OKTA","SPLK","ZS","CRWD","NET",
-        "FTNT","CHKP","DDOG","PSTG","MU","SK","SWKS","QRVO","XLNX","PLTR",
-        "UNP","CSX","NSC","KSU","WAB","CP","CNI","GE","CAT","DE","CMI","FANG",
-        "HON","LMT","BA","RTX","GD","NOC","TRI","SPY","QQQ","IWM",
-        "SAP.DE","SIE.DE","MUV2.DE","BMW.DE","VOW3.DE","DBX.DE","EOAN.DE",
-        "HEI.DE","ALV.DE","DAI.DE","BAS.DE","BAYN.DE","LIN.DE",
-        "OR.PA","SAN.PA","ENGI.PA","BNP.PA","TOTAL.PA","MC.PA","STLA.PA",
-        "HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO","ANTM",
-        "BP","SHELL","TTE","RELX","LGEN","AZN","GSK","ULVR","PRU","WPP",
-        "RCI.TO","TRP.TO","BCE.TO","TD.TO","BNS.TO","RY.TO","CM.TO","BMO.TO",
-        "SU.TO","CNQ.TO","CVE.TO","MEG.TO","XEO.TO","CPG.TO","AEM.TO","BAM.A",
-        "ANZ.AX","AWC.AX","BHP.AX","BXB.AX","CBA.AX","COL.AX","CSL.AX","CWN.AX",
-        "6758.T","9984.T","8802.T","9433.T","7203.T","0700.HK","0005.HK",
-        "0001.HK","0011.HK","0291.HK","RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS",
-        "601398.SS","600900.SS","600016.SS","601988.SS"
+        "AMAT","INTU","BKNG","SHOP","UBER","AMD","PYPL","SNPS","LRCX","KLAC"
       ],
-      "USA - NYSE & NASDAQ": ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","BRK.B","JNJ","KO","PG","MCD","V","UNH","JPM","XOM","WMT","BAC","PFE","MA"],
-      "Europe - DAX": ["SAP.DE","SIE.DE","MUV2.DE","BMW.DE","VOW3.DE","DBX.DE","EOAN.DE","HEI.DE","ALV.DE","DAI.DE"],
-      "Europe - FTSE": ["HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO","ANTM"],
-      "Asia - India": ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS","HDFC.NS","WIPRO.NS"],
+      "All ETFs": [
+        // US Index ETFs
+        "SPY","QQQ","IWM","EEM","VTI","VOO","VUG","VTV","AGG","BND",
+        "SPLG","SCHX","SCHG","SCHD","SCHO","SCHZ","SCHF","SCHE","SCHP",
+        // Bond ETFs
+        "BND","AGG","VCIT","VCSH","VGIT","VGSH","SHY","TLT","VEIEX",
+        // International ETFs
+        "VXUS","VEA","VTIAX","IEFA","IEMG","VWOB",
+        // Sector ETFs
+        "XLK","XLV","XLF","XLY","XLC","XLRE","XLI","XLE","XLU","XLRE",
+        // Alternative ETFs
+        "GLD","SLV","USO","SCHP","VNQ","VCIT"
+      ],
+      "Growth ETFs": [
+        "QQQ","VUG","SCHG","VLCX","QQQQX","GRO","NUSI","PRF","DGRO"
+      ],
+      "Dividend ETFs": [
+        "VYM","SCHD","DGRO","VYMI","DVYE","JEPI","XYLD","SDY","SDYL"
+      ],
+      "International": [
+        "VXUS","VEA","IEFA","IEMG","EEM","VTIAX","VGSLX"
+      ],
+      "USA Stocks": [
+        "AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","BRK.B","JNJ","KO",
+        "PG","MCD","V","UNH","JPM","XOM","WMT","BAC","PFE","MA"
+      ],
       "Custom": []
     };
 
-    let currentUniverse = "All 500+ Global Stocks";
+    let currentAsset = "stocks";
+    let currentUniverse = "All Stocks (500+)";
     let currentStrategy = "growth";
     let filters = { pe: 20, price: 200, cap: 1 };
     let isScanning = false;
     let results = [];
 
     const strategyDescriptions = {
-      growth: "Growth stocks: Higher growth potential, 15-35 P/E, positive momentum",
-      dividend: "Dividend stocks: Stable income, P/E < 20, large market cap (>$10B)",
+      growth: "Growth assets: Higher growth potential, 15-35 P/E, positive momentum",
+      dividend: "Dividend assets: Stable income, P/E < 20, large market cap (>$10B)",
       balanced: "Balanced: Good growth + income potential, P/E 12-25, >$1B market cap"
     };
 
@@ -294,6 +326,41 @@
       elem.textContent = msg;
       elem.style.display = "block";
       setTimeout(() => { elem.style.display = "none"; }, 5000);
+    }
+
+    function selectAsset(asset) {
+      currentAsset = asset;
+      document.querySelectorAll(".asset-btn").forEach(b => b.classList.remove("active"));
+      event.target.classList.add("active");
+      
+      // Update universe buttons based on asset type
+      const universeBtn = document.getElementById("universeButtons");
+      universeBtn.innerHTML = "";
+      
+      let universeOptions = {};
+      if (asset === "stocks") {
+        universeOptions = {"All Stocks (500+)": UNIVERSES["All Stocks (500+)"], "USA Stocks": UNIVERSES["USA Stocks"], "Custom": []};
+      } else if (asset === "etfs") {
+        universeOptions = {"All ETFs": UNIVERSES["All ETFs"], "Growth ETFs": UNIVERSES["Growth ETFs"], "Dividend ETFs": UNIVERSES["Dividend ETFs"], "International": UNIVERSES["International"], "Custom": []};
+      } else {
+        universeOptions = UNIVERSES;
+      }
+      
+      Object.keys(universeOptions).forEach(u => {
+        const btn = document.createElement("button");
+        btn.className = `ticker-btn ${u === currentUniverse ? "active" : ""}`;
+        btn.textContent = u.length > 30 ? u.substring(0, 30) + "..." : u;
+        btn.title = u;
+        btn.onclick = () => {
+          currentUniverse = u;
+          document.querySelectorAll(".ticker-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          updateCount();
+        };
+        universeBtn.appendChild(btn);
+      });
+      
+      updateCount();
     }
 
     function selectStrategy(strategy) {
@@ -335,30 +402,7 @@
     }
 
     function initUI() {
-      const container = document.getElementById("universeButtons");
-      Object.keys(UNIVERSES).forEach(u => {
-        const btn = document.createElement("button");
-        btn.className = `ticker-btn ${u === currentUniverse ? "active" : ""}`;
-        btn.textContent = u.length > 30 ? u.substring(0, 30) + "..." : u;
-        btn.title = u;
-        btn.style.background = u === currentUniverse ? "#7a5f2a" : "none";
-        btn.style.borderColor = u === currentUniverse ? "#d4a853" : "#27272a";
-        btn.style.color = u === currentUniverse ? "#edc97a" : "#71717a";
-        btn.onclick = () => {
-          currentUniverse = u;
-          document.querySelectorAll(".ticker-btn").forEach(b => {
-            b.style.background = "none";
-            b.style.borderColor = "#27272a";
-            b.style.color = "#71717a";
-          });
-          btn.style.background = "#7a5f2a";
-          btn.style.borderColor = "#d4a853";
-          btn.style.color = "#edc97a";
-          document.getElementById("customInput").style.display = u === "Custom" ? "block" : "none";
-          updateCount();
-        };
-        container.appendChild(btn);
-      });
+      selectAsset("stocks");
 
       document.getElementById("peSlider").addEventListener("change", (e) => {
         filters.pe = parseInt(e.target.value);
@@ -390,7 +434,7 @@
     async function startScan() {
       const tickers = getStocks();
       if (!tickers.length) {
-        showError("Please select stocks or enter tickers");
+        showError("Please select assets or enter tickers");
         return;
       }
 
@@ -454,7 +498,7 @@
     function refreshCache() {
       const tickers = getStocks();
       if (!tickers.length) {
-        showError("Please select stocks first");
+        showError("Please select assets first");
         return;
       }
       
@@ -500,15 +544,17 @@
           'balanced': '⚖️ Balanced'
         };
         
+        const isETF = s.ticker.length <= 5 && s.ticker.match(/^[A-Z]+$/);
+        
         return `
-          <div class="stock-card">
+          <div class="stock-card ${isETF ? 'etf' : ''}">
+            ${isETF ? '<div class="stock-type">🎯 ETF</div>' : ''}
             <div class="stock-ticker">${s.ticker}</div>
             <div class="stock-price">$${s.price.toFixed(2)}</div>
             <div class="stock-metric">P/E: ${s.peRatio ? s.peRatio.toFixed(1) : "—"}</div>
             <div class="stock-metric">MCap: $${s.marketCap || "—"}B</div>
-            <div class="stock-categories">${s.categories.map(c => categoryLabels[c]).join(', ') || 'N/A'}</div>
+            <div class="stock-categories">${s.categories && s.categories.length > 0 ? s.categories.map(c => categoryLabels[c]).join(', ') : 'Mixed'}</div>
             <div class="stock-source">${s.source === 'cached' ? '📦 Cached' : '🔄 Fresh'}</div>
-            <div class="stock-score ${scoreClass}">${s.peRatio && s.peRatio < 15 ? "✓ Value" : s.peRatio && s.peRatio < 25 ? "~ Fair" : "✗ Growth"}</div>
           </div>
         `;
       }).join("");
