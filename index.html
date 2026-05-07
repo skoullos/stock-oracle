@@ -57,6 +57,7 @@
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.1em;
+      margin-right: 8px;
     }
     button:hover { opacity: 0.85; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -86,6 +87,16 @@
     .ticker-btn.active { background: #7a5f2a; border-color: #d4a853; color: #edc97a; }
     .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
     .status { flex: 1; font-size: 11px; color: #71717a; }
+    .stats-box {
+      background: #131316;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 10px;
+      color: #71717a;
+      margin-bottom: 14px;
+    }
+    .stats-box strong { color: #edc97a; }
     .progress { height: 6px; background: #1e1e22; border-radius: 3px; margin-bottom: 14px; display: none; }
     .progress.show { display: block; }
     .progress-bar { height: 100%; width: 0%; background: #d4a853; transition: width 0.3s ease; }
@@ -104,6 +115,7 @@
     .stock-ticker { font-size: 13px; font-weight: 700; color: #edc97a; margin-bottom: 3px; }
     .stock-price { font-size: 12px; font-weight: 700; color: #f4f0e8; margin-bottom: 3px; }
     .stock-metric { font-size: 9px; color: #71717a; }
+    .stock-source { font-size: 8px; color: #7a5f2a; margin-top: 5px; font-style: italic; }
     .stock-score { font-size: 11px; font-weight: 700; margin-top: 5px; }
     .score-high { color: #4ade80; }
     .score-mid { color: #fbbf24; }
@@ -118,14 +130,14 @@
       <span>Berkshire</span>
       <h1>Stock Oracle</h1>
     </div>
-    <p class="header-subtitle">Production Version · Real API Data · Live Market Prices</p>
+    <p class="header-subtitle">Production Version · 500+ Stocks · Smart Caching · Real API Data</p>
   </div>
 
   <div class="container">
     <div class="error-message" id="errorMessage"></div>
 
     <div class="info-box">
-      ⚡ <strong>Production stock screening:</strong> Connected to real financial APIs. Select stocks, set filters (P/E, Price, Market Cap), and scan for value opportunities.
+      ⚡ <strong>Smart stock screening with caching:</strong> Screen 500+ stocks from all major exchanges. Data is cached for 24 hours, so repeated scans use zero API calls! Only fresh data wastes API budget.
     </div>
 
     <div class="panel">
@@ -163,9 +175,14 @@
     </div>
 
     <div class="controls">
-      <button id="scanBtn" onclick="startScan()">🚀 START SCAN</button>
+      <button id="scanBtn" onclick="startScan()">🚀 SCAN</button>
+      <button id="refreshBtn" onclick="refreshCache()" style="background: #0a4f0a; border-color: #4ade80; color: #4ade80;">🔄 REFRESH CACHE</button>
       <button id="stopBtn" onclick="stopScan()" style="display: none; background: #1a0606; border-color: #f87171; color: #f87171;">✕ STOP</button>
       <div class="status" id="status">Ready to scan</div>
+    </div>
+
+    <div class="stats-box" id="statsBox" style="display: none;">
+      Cache Efficiency: <strong id="efficiency">0%</strong> | API Calls Used: <strong id="apiCalls">0</strong> | Cache Hits: <strong id="cacheHits">0</strong>
     </div>
 
     <div class="progress" id="progress">
@@ -186,9 +203,25 @@
     const API_BASE = window.location.origin;
     
     const UNIVERSES = {
-      "Top 20 Tech": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "INTC", "AMD", "NFLX"],
-      "Top 20 Dividend": ["KO", "PG", "JNJ", "PEP", "MCD", "WMT", "T", "VZ", "CVX", "XOM"],
-      "Top 20 Blue Chip": ["AAPL", "MSFT", "GOOGL", "AMZN", "BRK.B", "JNJ", "V", "WMT", "PG", "MA"],
+      "All 500+ Stocks": [
+        "AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","BRK.B","JNJ","KO",
+        "PG","MCD","V","UNH","JPM","XOM","WMT","BAC","PFE","MA","LLY","AXP",
+        "CSCO","AVGO","CRM","IBM","ACN","PEP","MMM","GS","AIG","CVX","CCI",
+        "VZ","T","NFLX","ADBE","INTC","TJX","DIS","BA","MRK","ABT","ABBV",
+        "WFC","LIN","HON","QCOM","SYK","DUK","SO","NEE","RTX","FDX","COST",
+        "AMAT","INTU","BKNG","SHOP","UBER","AMD","PYPL","SNPS","LRCX","KLAC",
+        "MARVELL","ISRG","VRTX","REGN","BIIB","ILMN","ASML","TMO","DXCM","ZM",
+        "COIN","RBLX","DASH","ABNB","NOW","OKTA","SPLK","ZS","CRWD","NET",
+        "FTNT","CHKP","DDOG","PSTG","MU","SK","SWKS","QRVO","XLNX","PLTR",
+        "UNP","CSX","NSC","KSU","WAB","CP","CNI","GE","CAT","DE","CMI","FANG",
+        "HON","LMT","BA","RTX","GD","NOC","TRI","SPY","QQQ","IWM",
+        "HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO","ANTM",
+        "RCI.TO","TRP.TO","BCE.TO","TD.TO","BNS.TO","RY.TO","CM.TO","BMO.TO",
+        "ANZ.AX","AWC.AX","BHP.AX","BXB.AX","CBA.AX","COL.AX","CSL.AX","CWN.AX"
+      ],
+      "Top 20 Tech": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "INTC", "AMD", "NFLX", "CRM", "ADBE", "CSCO", "PYPL", "INTU", "QCOM", "ASML", "SNPS", "MU", "AMAT"],
+      "Top 20 Dividend": ["KO", "PG", "JNJ", "PEP", "MCD", "WMT", "T", "VZ", "CVX", "XOM", "PM", "MO", "ABT", "AZO", "HD", "IBM", "GIS", "LMT", "CAT", "DE"],
+      "Top 20 Blue Chip": ["AAPL", "MSFT", "GOOGL", "AMZN", "BRK.B", "JNJ", "V", "WMT", "PG", "MA", "UNH", "NVDA", "JPM", "XOM", "JNJ", "DIS", "NFLX", "KO", "INTC", "CSCO"],
       "Custom": []
     };
 
@@ -273,7 +306,7 @@
       document.getElementById("results").classList.remove("show");
 
       try {
-        document.getElementById("status").textContent = "Fetching stock data...";
+        document.getElementById("status").textContent = "Scanning...";
 
         const response = await fetch(`${API_BASE}/api/screen`, {
           method: "POST",
@@ -284,7 +317,8 @@
               maxPe: filters.pe,
               maxPrice: filters.price,
               minMarketCap: filters.cap
-            }
+            },
+            useCache: true
           })
         });
 
@@ -297,7 +331,13 @@
 
         document.getElementById("progressBar").style.width = "100%";
         displayResults(data);
-        document.getElementById("status").textContent = `✓ Complete! ${data.count}/${data.total} stocks passed`;
+        document.getElementById("status").textContent = `✓ Complete! ${data.count}/${data.total} passed`;
+        
+        // Show stats
+        document.getElementById("efficiency").textContent = data.efficiency + "%";
+        document.getElementById("apiCalls").textContent = data.apiCallsUsed;
+        document.getElementById("cacheHits").textContent = data.cacheHits;
+        document.getElementById("statsBox").style.display = "block";
       } catch (error) {
         showError(`Error: ${error.message}`);
         document.getElementById("status").textContent = "Scan failed";
@@ -316,6 +356,45 @@
       document.getElementById("status").textContent = "Scan stopped";
     }
 
+    function refreshCache() {
+      const tickers = getStocks();
+      if (!tickers.length) {
+        showError("Please select stocks first");
+        return;
+      }
+      
+      isScanning = true;
+      document.getElementById("scanBtn").style.display = "none";
+      document.getElementById("refreshBtn").style.display = "none";
+      document.getElementById("stopBtn").style.display = "block";
+      document.getElementById("progress").classList.add("show");
+      document.getElementById("status").textContent = "Refreshing cache...";
+
+      // Scan with useCache = false to force fresh data
+      fetch(`${API_BASE}/api/screen`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tickers: tickers,
+          filters: { maxPe: 999, maxPrice: 999999, minMarketCap: 0 },
+          useCache: false
+        })
+      }).then(r => r.json()).then(data => {
+        document.getElementById("progressBar").style.width = "100%";
+        document.getElementById("status").textContent = `✓ Cache refreshed! ${data.apiCallsUsed} API calls used`;
+        
+        document.getElementById("efficiency").textContent = "0%";
+        document.getElementById("apiCalls").textContent = data.apiCallsUsed;
+        document.getElementById("statsBox").style.display = "block";
+      }).finally(() => {
+        document.getElementById("scanBtn").style.display = "block";
+        document.getElementById("refreshBtn").style.display = "block";
+        document.getElementById("stopBtn").style.display = "none";
+        document.getElementById("progress").classList.remove("show");
+        isScanning = false;
+      });
+    }
+
     function displayResults(data) {
       const grid = document.getElementById("stockGrid");
       grid.innerHTML = data.passed.map(s => {
@@ -326,6 +405,7 @@
             <div class="stock-price">$${s.price.toFixed(2)}</div>
             <div class="stock-metric">P/E: ${s.peRatio ? s.peRatio.toFixed(1) : "—"}</div>
             <div class="stock-metric">MCap: $${s.marketCap || "—"}B</div>
+            <div class="stock-source">${s.source === 'cached' ? '📦 Cached' : '🔄 Fresh'}</div>
             <div class="stock-score ${scoreClass}">${s.peRatio && s.peRatio < 20 ? "Undervalued" : s.peRatio && s.peRatio < 35 ? "Fair" : "Expensive"}</div>
           </div>
         `;
