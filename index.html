@@ -62,7 +62,7 @@
     button:hover { opacity: 0.85; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     input[type="range"] { width: 100%; accent-color: #d4a853; }
-    input[type="text"], textarea { 
+    input[type="text"], textarea, select { 
       background: #09090b;
       border: 1px solid #27272a;
       color: #f4f0e8;
@@ -71,7 +71,7 @@
       font-family: Georgia, serif;
       width: 100%;
     }
-    input[type="text"]:focus, textarea:focus { outline: none; border-color: #d4a853 !important; }
+    input[type="text"]:focus, textarea:focus, select:focus { outline: none; border-color: #d4a853 !important; }
     textarea { resize: vertical; min-height: 60px; }
     .ticker-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .ticker-btn {
@@ -85,6 +85,19 @@
       font-size: 11px;
     }
     .ticker-btn.active { background: #7a5f2a; border-color: #d4a853; color: #edc97a; }
+    .strategy-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .strategy-btn {
+      background: none;
+      border: 1px solid #27272a;
+      color: #71717a;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .strategy-btn.active { background: #7a5f2a; border-color: #d4a853; color: #edc97a; }
     .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
     .status { flex: 1; font-size: 11px; color: #71717a; }
     .stats-box {
@@ -116,6 +129,7 @@
     .stock-price { font-size: 12px; font-weight: 700; color: #f4f0e8; margin-bottom: 3px; }
     .stock-metric { font-size: 9px; color: #71717a; }
     .stock-source { font-size: 8px; color: #7a5f2a; margin-top: 5px; font-style: italic; }
+    .stock-categories { font-size: 8px; color: #4ade80; margin-top: 3px; font-weight: 700; }
     .stock-score { font-size: 11px; font-weight: 700; margin-top: 5px; }
     .score-high { color: #4ade80; }
     .score-mid { color: #fbbf24; }
@@ -133,14 +147,14 @@
       <span>Berkshire</span>
       <h1>Stock Oracle</h1>
     </div>
-    <p class="header-subtitle">Global Edition · 500+ Stocks · All Major Exchanges · Smart Caching</p>
+    <p class="header-subtitle">Global Edition · 500+ Stocks · Investment Strategies · Smart Caching</p>
   </div>
 
   <div class="container">
     <div class="error-message" id="errorMessage"></div>
 
     <div class="info-box">
-      🌍 <strong>Global stock screening with caching:</strong> Screen 500+ stocks from NYSE, NASDAQ, LSE, Euronext, TSX, ASX, and more! Data is cached for 24 hours, so repeated scans use zero API calls.
+      🌍 <strong>Global stock screening with strategies:</strong> Screen 500+ stocks from all major exchanges. Find stocks for capital appreciation, dividends, or balanced investing. Data is cached for 24 hours!
     </div>
 
     <div class="panel">
@@ -148,6 +162,18 @@
       <div class="ticker-buttons" id="universeButtons"></div>
       <textarea id="customInput" placeholder="AAPL, SAP.DE, TCS.NS, ASML.AS, 0700.HK..." style="display: none;"></textarea>
       <div style="font-size: 10px; color: #7a5f2a; margin-top: 8px;">📊 <span id="tickerCount">0</span> tickers selected</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Investment Strategy</div>
+      <div class="strategy-buttons">
+        <button class="strategy-btn active" onclick="selectStrategy('growth')">📈 Capital Appreciation</button>
+        <button class="strategy-btn" onclick="selectStrategy('dividend')">💰 Dividends</button>
+        <button class="strategy-btn" onclick="selectStrategy('balanced')">⚖️ Balanced (Both)</button>
+      </div>
+      <div style="font-size: 9px; color: #7a5f2a; margin-top: 8px;">
+        <strong id="strategyDesc">Growth stocks: Higher growth potential, 15-35 P/E, momentum-driven</strong>
+      </div>
     </div>
 
     <div class="panel">
@@ -207,7 +233,7 @@
     </div>
 
     <div class="results" id="results">
-      <div class="results-title">⭐ Results — <span id="resultCount">0</span> Stocks Passed</div>
+      <div class="results-title">⭐ Results — <span id="resultCount">0</span> Stocks Matched Your Strategy</div>
       <div class="stock-grid" id="stockGrid"></div>
     </div>
 
@@ -221,7 +247,6 @@
     
     const UNIVERSES = {
       "All 500+ Global Stocks": [
-        // USA - NYSE & NASDAQ (120 stocks)
         "AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","BRK.B","JNJ","KO",
         "PG","MCD","V","UNH","JPM","XOM","WMT","BAC","PFE","MA","LLY","AXP",
         "CSCO","AVGO","CRM","IBM","ACN","PEP","MMM","GS","AIG","CVX","CCI",
@@ -233,122 +258,49 @@
         "FTNT","CHKP","DDOG","PSTG","MU","SK","SWKS","QRVO","XLNX","PLTR",
         "UNP","CSX","NSC","KSU","WAB","CP","CNI","GE","CAT","DE","CMI","FANG",
         "HON","LMT","BA","RTX","GD","NOC","TRI","SPY","QQQ","IWM",
-        "SPY","QQQ","DIA","IWM",
-        // Europe - Germany DAX (20 stocks)
         "SAP.DE","SIE.DE","MUV2.DE","BMW.DE","VOW3.DE","DBX.DE","EOAN.DE",
-        "HEI.DE","ALV.DE","DAI.DE","BAS.DE","BAYN.DE","LIN.DE","SAP","SIE",
-        // Europe - France CAC 40 (15 stocks)
+        "HEI.DE","ALV.DE","DAI.DE","BAS.DE","BAYN.DE","LIN.DE",
         "OR.PA","SAN.PA","ENGI.PA","BNP.PA","TOTAL.PA","MC.PA","STLA.PA",
-        "OREP.PA","EDF.PA","NOKIA.HE","NOKIA1V.HE",
-        // Europe - UK FTSE (20 stocks)
         "HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO","ANTM",
         "BP","SHELL","TTE","RELX","LGEN","AZN","GSK","ULVR","PRU","WPP",
-        // Canada - TSX (30 stocks)
-        "RCI.TO","TRP.TO","BCE.TO","TD.TO","BNS.TO","RY.TO","CM.TO","BMO.TO",
-        "SU.TO","CNQ.TO","CVE.TO","MEG.TO","XEO.TO","CPG.TO","PBA.TO","BIR.TO",
-        "AEM.TO","BAM.A","BAM.B","AQN.TO","ENB.TO","FP.TO","FNV.TO","KL.TO",
-        "MG.TO","PHM.TO","RCI.A","SJR.B","IFC.TO","ATD.B",
-        // Australia - ASX (30 stocks)
-        "ANZ.AX","AWC.AX","BHP.AX","BXB.AX","CBA.AX","COL.AX","CSL.AX","CWN.AX",
-        "DXN.AX","FPH.AX","GMG.AX","IAG.AX","JHX.AX","LLC.AX","MQG.AX","NAB.AX",
-        "QAN.AX","RIO.AX","RMD.AX","SCG.AX","SUN.AX","TCL.AX","TLS.AX","VCX.AX",
-        "WBC.AX","WES.AX","WPL.AX","APA.AX","FBU.AX","NEC.AX",
-        // Japan - Nikkei (25 stocks)
-        "6758.T","9984.T","8802.T","9433.T","7203.T","6861.T","5108.T","6594.T",
-        "8604.T","3382.T","2914.T","4502.T","7267.T","4689.T","1332.T","2282.T",
-        "6178.T","4063.T","6752.T","6301.T","4005.T","3289.T","6273.T",
-        // Hong Kong (20 stocks)
-        "0700.HK","0005.HK","0001.HK","0011.HK","0291.HK","0939.HK","0883.HK",
-        "0857.HK","1299.HK","0322.HK","0388.HK","0981.HK","0998.HK","0175.HK",
-        "1024.HK","0836.HK","1044.HK","2318.HK","3988.HK","0066.HK",
-        // China - Shanghai/Shenzhen (15 stocks)
-        "601398.SS","600900.SS","600016.SS","601988.SS","601288.SS","600519.SH",
-        "000858.SZ","000651.SZ","002304.SZ","600000.SH","601166.SS","000333.SZ",
-        // India - NSE (20 stocks)
-        "RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS","HDFC.NS",
-        "WIPRO.NS","BAJAJFINSV.NS","AXISBANK.NS","MARUTI.NS","SUNPHARMA.NS",
-        "NESTLEIND.NS","POWERGRID.NS","BHARTIARTL.NS","ASIANPAINT.NS","HCLTECH.NS",
-        // Singapore (10 stocks)
-        "C6L.SI","O39.SI","Z74.SI","U96.SI","J36.SI","N2IU.SI","V03.SI",
-        // South Korea (10 stocks)
-        "005930.KS","000660.KS","051910.KS","105560.KS","012330.KS",
-        // Brazil (10 stocks)
-        "VALE3.SA","PETR4.SA","BBDC4.SA","ITUB4.SA","ABEV3.SA","CSAN3.SA",
-        "WEGE3.SA","VVAR3.SA","BRFS3.SA","JBSS3.SA",
-        // Mexico (5 stocks)
-        "GFINBUR.MX","GMEXICOB.MX","ASEA.MX",
-        // Other emerging markets (20 stocks)
-        "INEO","VOD","ADS.DE","SIX.DE","BER.DE","IFX.DE","MRK.DE","FME.DE",
-        "MTX.DE","BBVA.MC","IAG.MC","AENA.MC","AMS.MC","INGA.AS","PHARM.AS"
-      ],
-      "USA - NYSE & NASDAQ (120 stocks)": [
-        "AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","BRK.B","JNJ","KO",
-        "PG","MCD","V","UNH","JPM","XOM","WMT","BAC","PFE","MA","LLY","AXP",
-        "CSCO","AVGO","CRM","IBM","ACN","PEP","MMM","GS","AIG","CVX","CCI",
-        "VZ","T","NFLX","ADBE","INTC","TJX","DIS","BA","MRK","ABT","ABBV",
-        "WFC","LIN","HON","QCOM","SYK","DUK","SO","NEE","RTX","FDX","COST",
-        "AMAT","INTU","BKNG","SHOP","UBER","AMD","PYPL","SNPS","LRCX","KLAC",
-        "MARVELL","ISRG","VRTX","REGN","BIIB","ILMN","ASML","TMO","DXCM","ZM",
-        "COIN","RBLX","DASH","ABNB","NOW","OKTA","SPLK","ZS","CRWD","NET",
-        "FTNT","CHKP","DDOG","PSTG","MU","SK","SWKS","QRVO","XLNX","PLTR",
-        "UNP","CSX","NSC","KSU","WAB","CP","CNI","GE","CAT","DE","CMI","FANG",
-        "HON","LMT","BA","RTX","GD","NOC","TRI","SPY","QQQ","IWM",
-        "SPY","QQQ","DIA","IWM"
-      ],
-      "Europe - DAX (Germany)": [
-        "SAP.DE","SIE.DE","MUV2.DE","BMW.DE","VOW3.DE","DBX.DE","EOAN.DE",
-        "HEI.DE","ALV.DE","DAI.DE","BAS.DE","BAYN.DE","LIN.DE","SAP","SIE"
-      ],
-      "Europe - CAC 40 (France)": [
-        "OR.PA","SAN.PA","ENGI.PA","BNP.PA","TOTAL.PA","MC.PA","STLA.PA",
-        "OREP.PA","EDF.PA","NOKIA.HE","NOKIA1V.HE"
-      ],
-      "Europe - FTSE (UK)": [
-        "HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO","ANTM",
-        "BP","SHELL","TTE","RELX","LGEN","AZN","GSK","ULVR","PRU","WPP"
-      ],
-      "Asia - Japan & Hong Kong": [
-        "6758.T","9984.T","8802.T","9433.T","7203.T","0700.HK","0005.HK",
-        "0001.HK","0011.HK","0291.HK","0939.HK","0883.HK","0857.HK","1299.HK",
-        "0322.HK","0388.HK","0981.HK","0998.HK","0175.HK","1024.HK"
-      ],
-      "Asia - India (NSE)": [
-        "RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS","HDFC.NS",
-        "WIPRO.NS","BAJAJFINSV.NS","AXISBANK.NS","MARUTI.NS","SUNPHARMA.NS",
-        "NESTLEIND.NS","POWERGRID.NS","BHARTIARTL.NS","ASIANPAINT.NS","HCLTECH.NS"
-      ],
-      "Asia - China (Shanghai/Shenzhen)": [
-        "601398.SS","600900.SS","600016.SS","601988.SS","601288.SS","600519.SH",
-        "000858.SZ","000651.SZ","002304.SZ","600000.SH","601166.SS","000333.SZ"
-      ],
-      "Americas - Canada (TSX)": [
         "RCI.TO","TRP.TO","BCE.TO","TD.TO","BNS.TO","RY.TO","CM.TO","BMO.TO",
         "SU.TO","CNQ.TO","CVE.TO","MEG.TO","XEO.TO","CPG.TO","AEM.TO","BAM.A",
-        "AQN.TO","ENB.TO","FP.TO","FNV.TO"
-      ],
-      "Americas - Brazil": [
-        "VALE3.SA","PETR4.SA","BBDC4.SA","ITUB4.SA","ABEV3.SA","CSAN3.SA",
-        "WEGE3.SA","VVAR3.SA","BRFS3.SA","JBSS3.SA"
-      ],
-      "APAC - Australia (ASX)": [
         "ANZ.AX","AWC.AX","BHP.AX","BXB.AX","CBA.AX","COL.AX","CSL.AX","CWN.AX",
-        "DXN.AX","FPH.AX","GMG.AX","IAG.AX","JHX.AX","MQG.AX","NAB.AX","QAN.AX",
-        "RIO.AX","RMD.AX","SCG.AX","TLS.AX"
+        "6758.T","9984.T","8802.T","9433.T","7203.T","0700.HK","0005.HK",
+        "0001.HK","0011.HK","0291.HK","RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS",
+        "601398.SS","600900.SS","600016.SS","601988.SS"
       ],
+      "USA - NYSE & NASDAQ": ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","BRK.B","JNJ","KO","PG","MCD","V","UNH","JPM","XOM","WMT","BAC","PFE","MA"],
+      "Europe - DAX": ["SAP.DE","SIE.DE","MUV2.DE","BMW.DE","VOW3.DE","DBX.DE","EOAN.DE","HEI.DE","ALV.DE","DAI.DE"],
+      "Europe - FTSE": ["HSBA","BARC","LLOY","STAN","NWG","RBS","GLEN","BLT","RIO","ANTM"],
+      "Asia - India": ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS","HDFC.NS","WIPRO.NS"],
       "Custom": []
     };
 
     let currentUniverse = "All 500+ Global Stocks";
+    let currentStrategy = "growth";
     let filters = { pe: 20, price: 200, cap: 1 };
     let isScanning = false;
-    let abortScan = false;
     let results = [];
+
+    const strategyDescriptions = {
+      growth: "Growth stocks: Higher growth potential, 15-35 P/E, positive momentum",
+      dividend: "Dividend stocks: Stable income, P/E < 20, large market cap (>$10B)",
+      balanced: "Balanced: Good growth + income potential, P/E 12-25, >$1B market cap"
+    };
 
     function showError(msg) {
       const elem = document.getElementById("errorMessage");
       elem.textContent = msg;
       elem.style.display = "block";
       setTimeout(() => { elem.style.display = "none"; }, 5000);
+    }
+
+    function selectStrategy(strategy) {
+      currentStrategy = strategy;
+      document.querySelectorAll(".strategy-btn").forEach(b => b.classList.remove("active"));
+      event.target.classList.add("active");
+      document.getElementById("strategyDesc").textContent = strategyDescriptions[strategy];
     }
 
     function applyPreset(preset) {
@@ -443,7 +395,6 @@
       }
 
       isScanning = true;
-      abortScan = false;
       results = [];
       document.getElementById("scanBtn").style.display = "none";
       document.getElementById("stopBtn").style.display = "block";
@@ -463,7 +414,8 @@
               maxPrice: filters.price,
               minMarketCap: filters.cap
             },
-            useCache: true
+            useCache: true,
+            strategy: currentStrategy
           })
         });
 
@@ -476,7 +428,7 @@
 
         document.getElementById("progressBar").style.width = "100%";
         displayResults(data);
-        document.getElementById("status").textContent = `✓ Complete! ${data.count}/${data.total} passed`;
+        document.getElementById("status").textContent = `✓ Complete! ${data.count}/${data.total} matched your ${currentStrategy} strategy`;
         
         document.getElementById("efficiency").textContent = data.efficiency + "%";
         document.getElementById("apiCalls").textContent = data.apiCallsUsed;
@@ -493,7 +445,6 @@
     }
 
     function stopScan() {
-      abortScan = true;
       isScanning = false;
       document.getElementById("scanBtn").style.display = "block";
       document.getElementById("stopBtn").style.display = "none";
@@ -520,7 +471,8 @@
         body: JSON.stringify({
           tickers: tickers,
           filters: { maxPe: 999, maxPrice: 999999, minMarketCap: 0 },
-          useCache: false
+          useCache: false,
+          strategy: "all"
         })
       }).then(r => r.json()).then(data => {
         document.getElementById("progressBar").style.width = "100%";
@@ -540,21 +492,28 @@
 
     function displayResults(data) {
       const grid = document.getElementById("stockGrid");
-      grid.innerHTML = data.passed.map(s => {
+      grid.innerHTML = results.map(s => {
         const scoreClass = s.peRatio && s.peRatio < 15 ? "score-high" : s.peRatio && s.peRatio < 25 ? "score-mid" : "score-low";
+        const categoryLabels = {
+          'growth': '📈 Growth',
+          'dividend': '💰 Dividend',
+          'balanced': '⚖️ Balanced'
+        };
+        
         return `
           <div class="stock-card">
             <div class="stock-ticker">${s.ticker}</div>
             <div class="stock-price">$${s.price.toFixed(2)}</div>
             <div class="stock-metric">P/E: ${s.peRatio ? s.peRatio.toFixed(1) : "—"}</div>
             <div class="stock-metric">MCap: $${s.marketCap || "—"}B</div>
+            <div class="stock-categories">${s.categories.map(c => categoryLabels[c]).join(', ') || 'N/A'}</div>
             <div class="stock-source">${s.source === 'cached' ? '📦 Cached' : '🔄 Fresh'}</div>
-            <div class="stock-score ${scoreClass}">${s.peRatio && s.peRatio < 15 ? "✓ Undervalued" : s.peRatio && s.peRatio < 25 ? "~ Fair" : "✗ Expensive"}</div>
+            <div class="stock-score ${scoreClass}">${s.peRatio && s.peRatio < 15 ? "✓ Value" : s.peRatio && s.peRatio < 25 ? "~ Fair" : "✗ Growth"}</div>
           </div>
         `;
       }).join("");
 
-      document.getElementById("resultCount").textContent = data.count;
+      document.getElementById("resultCount").textContent = results.length;
       document.getElementById("results").classList.add("show");
     }
 

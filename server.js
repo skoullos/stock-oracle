@@ -8,8 +8,7 @@ app.use(express.json());
 const ALPHA_VANTAGE_KEY = process.env.ALPHA_VANTAGE_KEY || 'demo';
 const ALPHA_BASE_URL = 'https://www.alphavantage.co/query';
 
-// In-memory cache (persists during server runtime)
-// In production, use Redis or a database
+// In-memory cache
 let stockCache = {};
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -83,27 +82,37 @@ function cacheStock(stockData) {
   }
 }
 
-app.get('/api/stock/:ticker', async (req, res) => {
-  const { ticker } = req.params;
+// Categorize stocks by investment strategy
+function categorizeStock(stock) {
+  const categories = [];
+  const pe = stock.peRatio;
+  const price = stock.price;
+  const mcap = stock.marketCap;
+  const change = stock.changePercent || 0;
 
-  // Try cache first
-  let cached = getCachedStock(ticker);
-  if (cached) {
-    return res.json(cached);
+  // Capital Appreciation: Higher growth potential
+  // P/E 15-35, positive momentum, lower price
+  if (pe && pe >= 15 && pe <= 35 && change >= -5 && price <= 200) {
+    categories.push('growth');
   }
 
-  // Fetch from API
-  const stockData = await getStockFromAPI(ticker);
-  if (!stockData) {
-    return res.status(404).json({ error: 'Ticker not found' });
+  // Dividends: Large stable companies
+  // P/E < 20, large market cap (>$10B), lower volatility
+  if (pe && pe < 20 && mcap && mcap >= 10e9) {
+    categories.push('dividend');
   }
 
-  cacheStock(stockData);
-  res.json(stockData);
-});
+  // Both: Balanced characteristics
+  // P/E 12-25, reasonable size (>$1B), stable
+  if (pe && pe >= 12 && pe <= 25 && mcap && mcap >= 1e9) {
+    categories.push('balanced');
+  }
+
+  return categories;
+}
 
 app.post('/api/screen', async (req, res) => {
-  const { tickers, filters, useCache = true } = req.body;
+  const { tickers, filters, useCache = true, strategy = 'value' } = req.body;
 
   if (!Array.isArray(tickers) || !filters) {
     return res.status(400).json({ error: 'Invalid request' });
@@ -140,24 +149,49 @@ app.post('/api/screen', async (req, res) => {
       const pe = stock.peRatio;
       const marketCap = stock.marketCap;
 
-      // Apply filters
+      // Apply base filters
       let passed = true;
       if (filters.maxPe && pe && pe > filters.maxPe) passed = false;
       if (filters.maxPrice && price > filters.maxPrice) passed = false;
       if (filters.minMarketCap && marketCap && marketCap < (filters.minMarketCap * 1e9)) passed = false;
 
-      if (passed) {
+      if (!passed) continue;
+
+      // Categorize stock
+      const categories = categorizeStock(stock);
+
+      // Filter by strategy
+      let includeInResults = false;
+      switch(strategy) {
+        case 'growth':
+          includeInResults = categories.includes('growth');
+          break;
+        case 'dividend':
+          includeInResults = categories.includes('dividend');
+          break;
+        case 'balanced':
+          includeInResults = categories.includes('balanced');
+          break;
+        case 'all':
+          includeInResults = categories.length > 0;
+          break;
+        default:
+          includeInResults = true;
+      }
+
+      if (includeInResults) {
         results.push({
           ticker: stock.ticker,
           price,
           peRatio: pe,
           marketCap: marketCap ? (marketCap / 1e9).toFixed(2) : null,
           changePercent: stock.changePercent,
-          source: stock.source
+          source: stock.source,
+          categories: categories
         });
       }
 
-      // Rate limiting for API calls
+      // Rate limiting
       if (!stock || stock.source === 'live') {
         await new Promise(resolve => setTimeout(resolve, 250));
       }
@@ -169,7 +203,8 @@ app.post('/api/screen', async (req, res) => {
       count: results.length,
       apiCallsUsed,
       cacheHits,
-      efficiency: cacheHits > 0 ? Math.round((cacheHits / tickers.length) * 100) : 0
+      efficiency: cacheHits > 0 ? Math.round((cacheHits / tickers.length) * 100) : 0,
+      strategy: strategy
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
