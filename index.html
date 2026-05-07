@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Oracle - Production</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #09090b;
+      color: #f4f0e8;
+      line-height: 1.6;
+    }
+    .header {
+      border-bottom: 1px solid #27272a;
+      padding: 15px 26px;
+      background: #0f0f11;
+    }
+    .header-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+    .header-title span { font-size: 9px; color: #7a5f2a; letter-spacing: 0.35em; text-transform: uppercase; }
+    .header-title h1 { margin: 0; font-size: 18px; font-weight: 700; color: #edc97a; letter-spacing: 0.14em; text-transform: uppercase; }
+    .header-subtitle { margin: 0; font-size: 9px; color: #71717a; letter-spacing: 0.16em; text-transform: uppercase; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 22px 18px; }
+    .info-box {
+      background: #080600;
+      border: 1px solid #7a5f2a;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      line-height: 1.7;
+      font-size: 13px;
+    }
+    .panel {
+      background: #0f0f11;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .panel-title {
+      font-family: Georgia, serif;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: #d4a853;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    button {
+      background: #7a5f2a;
+      border: 1px solid #d4a853;
+      color: #edc97a;
+      padding: 11px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type="range"] { width: 100%; accent-color: #d4a853; }
+    input[type="text"], textarea { 
+      background: #09090b;
+      border: 1px solid #27272a;
+      color: #f4f0e8;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-family: Georgia, serif;
+      width: 100%;
+    }
+    input[type="text"]:focus, textarea:focus { outline: none; border-color: #d4a853 !important; }
+    textarea { resize: vertical; min-height: 60px; }
+    .ticker-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .ticker-btn {
+      background: none;
+      border: 1px solid #27272a;
+      color: #71717a;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      font-size: 11px;
+    }
+    .ticker-btn.active { background: #7a5f2a; border-color: #d4a853; color: #edc97a; }
+    .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    .status { flex: 1; font-size: 11px; color: #71717a; }
+    .progress { height: 6px; background: #1e1e22; border-radius: 3px; margin-bottom: 14px; display: none; }
+    .progress.show { display: block; }
+    .progress-bar { height: 100%; width: 0%; background: #d4a853; transition: width 0.3s ease; }
+    .results { background: #0f0f11; border: 1px solid #14532d; border-radius: 12px; padding: 18px; display: none; }
+    .results.show { display: block; }
+    .results-title { font-family: Georgia, serif; font-size: 10px; letter-spacing: 0.2em; color: #4ade80; text-transform: uppercase; margin-bottom: 12px; }
+    .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .stock-card {
+      background: #131316;
+      border: 1px solid #14532d;
+      border-radius: 10px;
+      padding: 11px 12px;
+      cursor: pointer;
+    }
+    .stock-card:hover { transform: translateY(-2px); }
+    .stock-ticker { font-size: 13px; font-weight: 700; color: #edc97a; margin-bottom: 3px; }
+    .stock-price { font-size: 12px; font-weight: 700; color: #f4f0e8; margin-bottom: 3px; }
+    .stock-metric { font-size: 9px; color: #71717a; }
+    .stock-score { font-size: 11px; font-weight: 700; margin-top: 5px; }
+    .score-high { color: #4ade80; }
+    .score-mid { color: #fbbf24; }
+    .score-low { color: #f87171; }
+    .footer { margin-top: 20px; font-size: 9px; color: #71717a; text-align: center; border-top: 1px solid #1d1d20; padding-top: 12px; }
+    .error-message { background: #1a0606; border: 1px solid #f87171; color: #f87171; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-title">
+      <span>Berkshire</span>
+      <h1>Stock Oracle</h1>
+    </div>
+    <p class="header-subtitle">Production Version · Real API Data · Live Market Prices</p>
+  </div>
+
+  <div class="container">
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="info-box">
+      ⚡ <strong>Production stock screening:</strong> Connected to real financial APIs. Select stocks, set filters (P/E, Price, Market Cap), and scan for value opportunities.
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Select Stocks</div>
+      <div class="ticker-buttons" id="universeButtons"></div>
+      <textarea id="customInput" placeholder="AAPL, MSFT, KO, GOOGL..." style="display: none;"></textarea>
+      <div style="font-size: 10px; color: #7a5f2a; margin-top: 8px;">📊 <span id="tickerCount">0</span> tickers selected</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Screening Filters</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+        <div>
+          <label style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #71717a;">
+            <span>Max P/E Ratio</span>
+            <span style="color: #edc97a; font-weight: 700;" id="peValue">30</span>
+          </label>
+          <input type="range" id="peSlider" min="5" max="100" value="30" step="1">
+        </div>
+        <div>
+          <label style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #71717a;">
+            <span>Max Price ($)</span>
+            <span style="color: #edc97a; font-weight: 700;" id="priceValue">500</span>
+          </label>
+          <input type="range" id="priceSlider" min="10" max="1000" value="500" step="10">
+        </div>
+        <div>
+          <label style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #71717a;">
+            <span>Min Market Cap (B$)</span>
+            <span style="color: #edc97a; font-weight: 700;" id="capValue">0</span>
+          </label>
+          <input type="range" id="capSlider" min="0" max="500" value="0" step="10">
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="scanBtn" onclick="startScan()">🚀 START SCAN</button>
+      <button id="stopBtn" onclick="stopScan()" style="display: none; background: #1a0606; border-color: #f87171; color: #f87171;">✕ STOP</button>
+      <div class="status" id="status">Ready to scan</div>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="results" id="results">
+      <div class="results-title">⭐ Results — <span id="resultCount">0</span> Stocks Passed</div>
+      <div class="stock-grid" id="stockGrid"></div>
+    </div>
+
+    <div class="footer">
+      ⚠ Educational purposes only · Not financial advice · Data from Alpha Vantage API
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    
+    const UNIVERSES = {
+      "Top 20 Tech": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "INTC", "AMD", "NFLX"],
+      "Top 20 Dividend": ["KO", "PG", "JNJ", "PEP", "MCD", "WMT", "T", "VZ", "CVX", "XOM"],
+      "Top 20 Blue Chip": ["AAPL", "MSFT", "GOOGL", "AMZN", "BRK.B", "JNJ", "V", "WMT", "PG", "MA"],
+      "Custom": []
+    };
+
+    let currentUniverse = "Top 20 Blue Chip";
+    let filters = { pe: 30, price: 500, cap: 0 };
+    let isScanning = false;
+    let abortScan = false;
+    let results = [];
+
+    function showError(msg) {
+      const elem = document.getElementById("errorMessage");
+      elem.textContent = msg;
+      elem.style.display = "block";
+      setTimeout(() => { elem.style.display = "none"; }, 5000);
+    }
+
+    function initUI() {
+      const container = document.getElementById("universeButtons");
+      Object.keys(UNIVERSES).forEach(u => {
+        const btn = document.createElement("button");
+        btn.className = `ticker-btn ${u === currentUniverse ? "active" : ""}`;
+        btn.textContent = u;
+        btn.style.background = u === currentUniverse ? "#7a5f2a" : "none";
+        btn.style.borderColor = u === currentUniverse ? "#d4a853" : "#27272a";
+        btn.style.color = u === currentUniverse ? "#edc97a" : "#71717a";
+        btn.onclick = () => {
+          currentUniverse = u;
+          document.querySelectorAll(".ticker-btn").forEach(b => {
+            b.style.background = "none";
+            b.style.borderColor = "#27272a";
+            b.style.color = "#71717a";
+          });
+          btn.style.background = "#7a5f2a";
+          btn.style.borderColor = "#d4a853";
+          btn.style.color = "#edc97a";
+          document.getElementById("customInput").style.display = u === "Custom" ? "block" : "none";
+          updateCount();
+        };
+        container.appendChild(btn);
+      });
+
+      document.getElementById("peSlider").addEventListener("change", (e) => {
+        filters.pe = parseInt(e.target.value);
+        document.getElementById("peValue").textContent = filters.pe;
+      });
+      document.getElementById("priceSlider").addEventListener("change", (e) => {
+        filters.price = parseInt(e.target.value);
+        document.getElementById("priceValue").textContent = filters.price;
+      });
+      document.getElementById("capSlider").addEventListener("change", (e) => {
+        filters.cap = parseInt(e.target.value);
+        document.getElementById("capValue").textContent = filters.cap;
+      });
+
+      updateCount();
+    }
+
+    function getStocks() {
+      if (currentUniverse === "Custom") {
+        return document.getElementById("customInput").value.split(/[\s,]+/).map(t => t.trim().toUpperCase()).filter(Boolean);
+      }
+      return UNIVERSES[currentUniverse] || [];
+    }
+
+    function updateCount() {
+      document.getElementById("tickerCount").textContent = getStocks().length;
+    }
+
+    async function startScan() {
+      const tickers = getStocks();
+      if (!tickers.length) {
+        showError("Please select stocks or enter tickers");
+        return;
+      }
+
+      isScanning = true;
+      abortScan = false;
+      results = [];
+      document.getElementById("scanBtn").style.display = "none";
+      document.getElementById("stopBtn").style.display = "block";
+      document.getElementById("progress").classList.add("show");
+      document.getElementById("results").classList.remove("show");
+
+      try {
+        document.getElementById("status").textContent = "Fetching stock data...";
+
+        const response = await fetch(`${API_BASE}/api/screen`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tickers: tickers,
+            filters: {
+              maxPe: filters.pe,
+              maxPrice: filters.price,
+              minMarketCap: filters.cap
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        results = data.passed || [];
+
+        document.getElementById("progressBar").style.width = "100%";
+        displayResults(data);
+        document.getElementById("status").textContent = `✓ Complete! ${data.count}/${data.total} stocks passed`;
+      } catch (error) {
+        showError(`Error: ${error.message}`);
+        document.getElementById("status").textContent = "Scan failed";
+      } finally {
+        document.getElementById("scanBtn").style.display = "block";
+        document.getElementById("stopBtn").style.display = "none";
+        document.getElementById("progress").classList.remove("show");
+      }
+    }
+
+    function stopScan() {
+      abortScan = true;
+      isScanning = false;
+      document.getElementById("scanBtn").style.display = "block";
+      document.getElementById("stopBtn").style.display = "none";
+      document.getElementById("status").textContent = "Scan stopped";
+    }
+
+    function displayResults(data) {
+      const grid = document.getElementById("stockGrid");
+      grid.innerHTML = data.passed.map(s => {
+        const scoreClass = s.peRatio && s.peRatio < 20 ? "score-high" : s.peRatio && s.peRatio < 35 ? "score-mid" : "score-low";
+        return `
+          <div class="stock-card">
+            <div class="stock-ticker">${s.ticker}</div>
+            <div class="stock-price">$${s.price.toFixed(2)}</div>
+            <div class="stock-metric">P/E: ${s.peRatio ? s.peRatio.toFixed(1) : "—"}</div>
+            <div class="stock-metric">MCap: $${s.marketCap || "—"}B</div>
+            <div class="stock-score ${scoreClass}">${s.peRatio && s.peRatio < 20 ? "Undervalued" : s.peRatio && s.peRatio < 35 ? "Fair" : "Expensive"}</div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("resultCount").textContent = data.count;
+      document.getElementById("results").classList.add("show");
+    }
+
+    window.addEventListener("load", initUI);
+  </script>
+</body>
+</html>
