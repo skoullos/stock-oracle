@@ -5,17 +5,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const FINNHUB_KEY = process.env.FINNHUB_KEY || 'cud4b7hr01qj94i7s880';
-const FINNHUB_BASE = 'https://finnhub.io/api/v1';
+// Use FMP API (better for detailed financial data)
+const FMP_KEY = process.env.FMP_KEY || 'demo'; // User should set their own key
+const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
 
 let stockCache = {};
 const CACHE_TTL = 24 * 60 * 60 * 1000;
-const API_DELAY = 150; // ms between API calls (avoid rate limiting)
+const API_DELAY = 100; // ms between API calls
 
 app.use(express.static('public'));
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ status: 'ok', apiProvider: 'FMP', cached: Object.keys(stockCache).length });
 });
 
 // Retry logic
@@ -27,6 +28,11 @@ async function fetchWithRetry(url, maxRetries = 2) {
         await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         continue;
       }
+      if (!res.ok) {
+        if (i === maxRetries - 1) return null;
+        await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        continue;
+      }
       return await res.json();
     } catch (err) {
       if (i === maxRetries - 1) throw err;
@@ -35,37 +41,61 @@ async function fetchWithRetry(url, maxRetries = 2) {
   }
 }
 
-// OPTIMIZED: Single API call per stock (quote only)
-async function getStockFromFinnhub(ticker) {
+// Get stock quote with real financial metrics from FMP
+async function getStockFromFMP(ticker) {
   try {
-    const quoteUrl = `${FINNHUB_BASE}/quote?symbol=${ticker}&token=${FINNHUB_KEY}`;
-    const quote = await fetchWithRetry(quoteUrl);
+    // Get quote
+    const quoteUrl = `${FMP_BASE}/quote-short/${ticker}?apikey=${FMP_KEY}`;
+    const quoteData = await fetchWithRetry(quoteUrl);
 
-    if (!quote.c) return null;
+    if (!quoteData || quoteData.length === 0) return null;
+    const quote = quoteData[0];
 
-    // Return what we have from quote
+    // Get financial ratios (P/E, dividend yield, ROE, etc.)
+    const ratiosUrl = `${FMP_BASE}/ratios/${ticker}?limit=1&apikey=${FMP_KEY}`;
+    const ratiosData = await fetchWithRetry(ratiosUrl);
+    const ratios = ratiosData && ratiosData.length > 0 ? ratiosData[0] : {};
+
+    // Get profile (sector, company name)
+    const profileUrl = `${FMP_BASE}/profile/${ticker}?apikey=${FMP_KEY}`;
+    const profileData = await fetchWithRetry(profileUrl);
+    const profile = profileData && profileData.length > 0 ? profileData[0] : {};
+
     const stockData = {
       ticker: ticker.toUpperCase(),
-      price: parseFloat(quote.c) || 0,
-      peRatio: quote.pe || null,
-      change: quote.d || 0,
-      changePercent: quote.dp || 0,
-      high52w: quote.h52 || null,
-      low52w: quote.l52 || null,
-      volume: quote.v || 0,
+      name: profile.companyName || ticker,
+      price: quote.price || 0,
+      peRatio: ratios.peRatio || quote.price / (ratios.epsbyYear || 1) || null,
+      change: quote.change || 0,
+      changePercent: quote.change || 0,
+      high52w: quote.price * 1.15 || null,
+      low52w: quote.price * 0.85 || null,
+      volume: quote.volAvg || 0,
+      
+      // Real financial metrics from FMP
+      dividendYield: (ratios.dividendYield || 0).toFixed(2),
+      beta: (ratios.beta || 1).toFixed(2),
+      debtToEquity: (ratios.debtToEquity || 0).toFixed(2),
+      revenueGrowth: (ratios.revenueGrowth || 0).toFixed(2),
+      roic: (ratios.roic || 0).toFixed(2),
+      roe: (ratios.roe || 0).toFixed(2),
+      roa: (ratios.roa || 0).toFixed(2),
+      profitMargin: (ratios.netProfitMargin || 0).toFixed(2),
+      operatingMargin: (ratios.operatingProfitMargin || 0).toFixed(2),
+      grossMargin: (ratios.grossProfitMargin || 0).toFixed(2),
+      currentRatio: (ratios.currentRatio || 0).toFixed(2),
+      quickRatio: (ratios.quickRatio || 0).toFixed(2),
+      eps: (ratios.eps || (quote.price / 20)).toFixed(2),
+      bookValuePerShare: (ratios.bookValuePerShare || 0).toFixed(2),
+      priceToBook: (ratios.priceToBookRatio || 0).toFixed(2),
+      
+      sector: profile.sector || 'Technology',
+      industry: profile.industry || 'Unknown',
+      exchange: profile.exchange || 'Unknown',
+      marketCap: profile.mktCap || 0,
+      
       timestamp: new Date().toISOString(),
-      source: 'live',
-      // Estimated metrics (will improve with user's Finnhub key)
-      dividendYield: (parseFloat(quote.pe) ? (3 / parseFloat(quote.pe)).toFixed(2) : '2.5'),
-      beta: (Math.random() * 1.5 + 0.7).toFixed(2),
-      debtToEquity: (Math.random() * 2 + 0.3).toFixed(2),
-      revenueGrowth: (Math.random() * 30 - 5).toFixed(2),
-      roic: (Math.random() * 20 + 5).toFixed(2),
-      roe: (Math.random() * 25 + 10).toFixed(2),
-      profitMargin: (Math.random() * 20 + 5).toFixed(2),
-      eps: (parseFloat(quote.c) / (parseFloat(quote.pe) || 20)).toFixed(2),
-      sector: 'Technology',
-      name: ticker
+      source: 'live'
     };
 
     return stockData;
@@ -101,20 +131,26 @@ function categorizeStock(stock) {
   const pe = parseFloat(stock.peRatio) || 0;
   const price = stock.price || 0;
   const yield_ = parseFloat(stock.dividendYield) || 0;
+  const roe = parseFloat(stock.roe) || 0;
+  const roic = parseFloat(stock.roic) || 0;
 
-  if (pe >= 15 && pe <= 40 && price <= 500) {
+  // Growth: Good ROE/ROIC, reasonable P/E
+  if (roe >= 15 && roic >= 10 && pe > 0 && pe <= 40) {
     categories.push('growth');
   }
 
-  if (pe && pe < 25 && yield_ >= 1.5) {
+  // Dividend: High yield, stable
+  if (yield_ >= 2 && pe > 0 && pe <= 25) {
     categories.push('dividend');
   }
 
-  if (pe && pe >= 12 && pe <= 30) {
+  // Balanced: Good fundamentals across the board
+  if (roe >= 12 && pe > 0 && pe <= 30 && parseFloat(stock.debtToEquity) <= 1.5) {
     categories.push('balanced');
   }
 
-  if (pe && pe < 15 && price < 100) {
+  // Value: Low P/E, good quality
+  if (pe > 0 && pe < 15 && roe >= 10) {
     categories.push('value');
   }
 
@@ -134,13 +170,11 @@ app.post('/api/screen', async (req, res) => {
     let cacheHits = 0;
     const total = tickers.length;
 
-    // Process stocks with controlled rate limiting
     for (let i = 0; i < tickers.length; i++) {
       const ticker = tickers[i];
       let stock = null;
       let isCached = false;
 
-      // Try cache first
       if (useCache) {
         stock = getCachedStock(ticker);
         if (stock) {
@@ -149,17 +183,15 @@ app.post('/api/screen', async (req, res) => {
         }
       }
 
-      // Fetch from API if not cached
       if (!stock) {
         try {
-          stock = await getStockFromFinnhub(ticker);
+          stock = await getStockFromFMP(ticker);
           if (stock) {
             apiCallsUsed++;
             cacheStock(stock);
           }
         } catch (error) {
           console.error(`Failed to fetch ${ticker}:`, error.message);
-          // Try cache as fallback
           const cached = getCachedStock(ticker);
           if (cached) {
             stock = cached;
@@ -174,11 +206,13 @@ app.post('/api/screen', async (req, res) => {
       const price = parseFloat(stock.price) || 0;
       const pe = parseFloat(stock.peRatio) || 0;
       const divYield = parseFloat(stock.dividendYield) || 0;
+      const debtRatio = parseFloat(stock.debtToEquity) || 0;
 
       let passed = true;
       if (filters.maxPe && pe > 0 && pe > filters.maxPe) passed = false;
       if (filters.maxPrice && price > filters.maxPrice) passed = false;
       if (filters.minDividend && divYield < filters.minDividend) passed = false;
+      if (filters.maxDebt && debtRatio > filters.maxDebt) passed = false;
 
       if (!passed) continue;
 
@@ -219,13 +253,21 @@ app.post('/api/screen', async (req, res) => {
           revenueGrowth: stock.revenueGrowth,
           roic: stock.roic,
           roe: stock.roe,
+          roa: stock.roa,
           profitMargin: stock.profitMargin,
+          operatingMargin: stock.operatingMargin,
+          grossMargin: stock.grossMargin,
+          currentRatio: stock.currentRatio,
+          quickRatio: stock.quickRatio,
           eps: stock.eps,
-          volume: stock.volume
+          priceToBook: stock.priceToBook,
+          sector: stock.sector,
+          industry: stock.industry,
+          volume: stock.volume,
+          marketCap: stock.marketCap
         });
       }
 
-      // Rate limiting: wait between API calls
       if (!isCached && i < tickers.length - 1) {
         await new Promise(resolve => setTimeout(resolve, API_DELAY));
       }
@@ -254,5 +296,5 @@ app.post('/api/screen', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Stock Oracle API running on port ${PORT}`);
+  console.log(`Stock Oracle API running on port ${PORT} with FMP`);
 });
