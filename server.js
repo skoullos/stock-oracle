@@ -5,13 +5,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Use FMP API (better for detailed financial data)
-const FMP_KEY = process.env.FMP_KEY || 'demo'; // User should set their own key
+const FMP_KEY = process.env.FMP_KEY || 'demo';
 const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
 
 let stockCache = {};
 const CACHE_TTL = 24 * 60 * 60 * 1000;
-const API_DELAY = 100; // ms between API calls
+const API_DELAY = 100;
 
 app.use(express.static('public'));
 
@@ -19,12 +18,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', apiProvider: 'FMP', cached: Object.keys(stockCache).length });
 });
 
-// Retry logic
 async function fetchWithRetry(url, maxRetries = 2) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const res = await fetch(url);
-      if (res.status === 429) { // Rate limited
+      if (res.status === 429) {
         await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         continue;
       }
@@ -41,22 +39,18 @@ async function fetchWithRetry(url, maxRetries = 2) {
   }
 }
 
-// Get stock quote with real financial metrics from FMP
 async function getStockFromFMP(ticker) {
   try {
-    // Get quote
     const quoteUrl = `${FMP_BASE}/quote-short/${ticker}?apikey=${FMP_KEY}`;
     const quoteData = await fetchWithRetry(quoteUrl);
 
     if (!quoteData || quoteData.length === 0) return null;
     const quote = quoteData[0];
 
-    // Get financial ratios (P/E, dividend yield, ROE, etc.)
     const ratiosUrl = `${FMP_BASE}/ratios/${ticker}?limit=1&apikey=${FMP_KEY}`;
     const ratiosData = await fetchWithRetry(ratiosUrl);
     const ratios = ratiosData && ratiosData.length > 0 ? ratiosData[0] : {};
 
-    // Get profile (sector, company name)
     const profileUrl = `${FMP_BASE}/profile/${ticker}?apikey=${FMP_KEY}`;
     const profileData = await fetchWithRetry(profileUrl);
     const profile = profileData && profileData.length > 0 ? profileData[0] : {};
@@ -71,8 +65,6 @@ async function getStockFromFMP(ticker) {
       high52w: quote.price * 1.15 || null,
       low52w: quote.price * 0.85 || null,
       volume: quote.volAvg || 0,
-      
-      // Real financial metrics from FMP
       dividendYield: (ratios.dividendYield || 0).toFixed(2),
       beta: (ratios.beta || 1).toFixed(2),
       debtToEquity: (ratios.debtToEquity || 0).toFixed(2),
@@ -88,12 +80,10 @@ async function getStockFromFMP(ticker) {
       eps: (ratios.eps || (quote.price / 20)).toFixed(2),
       bookValuePerShare: (ratios.bookValuePerShare || 0).toFixed(2),
       priceToBook: (ratios.priceToBookRatio || 0).toFixed(2),
-      
       sector: profile.sector || 'Technology',
       industry: profile.industry || 'Unknown',
       exchange: profile.exchange || 'Unknown',
       marketCap: profile.mktCap || 0,
-      
       timestamp: new Date().toISOString(),
       source: 'live'
     };
@@ -129,27 +119,22 @@ function cacheStock(stockData) {
 function categorizeStock(stock) {
   const categories = [];
   const pe = parseFloat(stock.peRatio) || 0;
-  const price = stock.price || 0;
   const yield_ = parseFloat(stock.dividendYield) || 0;
   const roe = parseFloat(stock.roe) || 0;
   const roic = parseFloat(stock.roic) || 0;
 
-  // Growth: Good ROE/ROIC, reasonable P/E
   if (roe >= 15 && roic >= 10 && pe > 0 && pe <= 40) {
     categories.push('growth');
   }
 
-  // Dividend: High yield, stable
   if (yield_ >= 2 && pe > 0 && pe <= 25) {
     categories.push('dividend');
   }
 
-  // Balanced: Good fundamentals across the board
   if (roe >= 12 && pe > 0 && pe <= 30 && parseFloat(stock.debtToEquity) <= 1.5) {
     categories.push('balanced');
   }
 
-  // Value: Low P/E, good quality
   if (pe > 0 && pe < 15 && roe >= 10) {
     categories.push('value');
   }
@@ -202,7 +187,6 @@ app.post('/api/screen', async (req, res) => {
 
       if (!stock) continue;
 
-      // Apply filters
       const price = parseFloat(stock.price) || 0;
       const pe = parseFloat(stock.peRatio) || 0;
       const divYield = parseFloat(stock.dividendYield) || 0;
