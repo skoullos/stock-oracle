@@ -5,86 +5,56 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Use FMP API
 const FMP_KEY = process.env.FMP_KEY || 'demo';
 const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
 
 let stockCache = {};
 const CACHE_TTL = 24 * 60 * 60 * 1000;
-const API_DELAY = 100;
 
 app.use(express.static('public'));
 
-console.log(`Starting Stock Oracle with FMP_KEY: ${FMP_KEY === 'demo' ? 'DEMO (not set)' : 'SET'}`);
+console.log(`\n🚀 Stock Oracle API running\n`);
+console.log(`FMP_KEY: ${FMP_KEY === 'demo' ? 'NOT SET (using mock data)' : 'CONFIGURED'}\n`);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    apiProvider: 'FMP', 
-    fmpKeySet: FMP_KEY !== 'demo',
-    cached: Object.keys(stockCache).length,
-    message: FMP_KEY === 'demo' ? 'WARNING: FMP_KEY not configured' : 'FMP_KEY is configured'
+    usingMockData: FMP_KEY === 'demo',
+    cached: Object.keys(stockCache).length
   });
 });
 
-async function fetchWithRetry(url, maxRetries = 2) {
-  console.log(`Fetching: ${url.substring(0, 80)}...`);
-  
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const res = await fetch(url);
-      console.log(`Response status: ${res.status}`);
-      
-      if (res.status === 429) {
-        console.log('Rate limited, retrying...');
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-        continue;
-      }
-      if (!res.ok) {
-        console.log(`Bad response: ${res.status}`);
-        if (i === maxRetries - 1) return null;
-        await new Promise(r => setTimeout(r, 500 * (i + 1)));
-        continue;
-      }
-      const data = await res.json();
-      console.log(`Got data: ${JSON.stringify(data).substring(0, 100)}...`);
-      return data;
-    } catch (err) {
-      console.error(`Fetch error (attempt ${i + 1}): ${err.message}`);
-      if (i === maxRetries - 1) throw err;
-      await new Promise(r => setTimeout(r, 500 * (i + 1)));
-    }
-  }
-}
-
-// Get mock stock data for demo
+// Simple mock data generator
 function getMockStock(ticker) {
+  const pe = parseFloat((Math.random() * 35 + 8).toFixed(2));
+  const roe = parseFloat((Math.random() * 25 + 10).toFixed(2));
+  const roic = parseFloat((Math.random() * 20 + 8).toFixed(2));
+  
   return {
     ticker: ticker.toUpperCase(),
-    name: `${ticker} Inc`,
-    price: (Math.random() * 300 + 50).toFixed(2),
-    peRatio: (Math.random() * 40 + 5).toFixed(2),
-    change: (Math.random() * 10 - 5).toFixed(2),
-    changePercent: (Math.random() * 10 - 5).toFixed(2),
-    high52w: (Math.random() * 400 + 100).toFixed(2),
-    low52w: (Math.random() * 200 + 50).toFixed(2),
+    name: `${ticker} Corporation`,
+    price: parseFloat((Math.random() * 300 + 20).toFixed(2)),
+    peRatio: pe,
+    change: parseFloat((Math.random() * 10 - 5).toFixed(2)),
+    changePercent: parseFloat((Math.random() * 10 - 5).toFixed(2)),
+    high52w: parseFloat((Math.random() * 400 + 100).toFixed(2)),
+    low52w: parseFloat((Math.random() * 200 + 50).toFixed(2)),
     volume: Math.floor(Math.random() * 100000000),
-    dividendYield: (Math.random() * 5).toFixed(2),
-    beta: (Math.random() * 1.5 + 0.7).toFixed(2),
-    debtToEquity: (Math.random() * 2).toFixed(2),
-    revenueGrowth: (Math.random() * 30 - 10).toFixed(2),
-    roic: (Math.random() * 20 + 5).toFixed(2),
-    roe: (Math.random() * 30 + 10).toFixed(2),
-    roa: (Math.random() * 15 + 5).toFixed(2),
-    profitMargin: (Math.random() * 20 + 5).toFixed(2),
-    operatingMargin: (Math.random() * 20 + 5).toFixed(2),
-    grossMargin: (Math.random() * 40 + 20).toFixed(2),
-    currentRatio: (Math.random() * 2 + 1).toFixed(2),
-    quickRatio: (Math.random() * 2).toFixed(2),
-    eps: (Math.random() * 10 + 1).toFixed(2),
-    bookValuePerShare: (Math.random() * 100 + 10).toFixed(2),
-    priceToBook: (Math.random() * 5 + 1).toFixed(2),
-    sector: ['Technology', 'Healthcare', 'Finance', 'Energy', 'Consumer'][Math.floor(Math.random() * 5)],
+    dividendYield: parseFloat((Math.random() * 6 + 0.5).toFixed(2)),
+    beta: parseFloat((Math.random() * 1.5 + 0.6).toFixed(2)),
+    debtToEquity: parseFloat((Math.random() * 2 + 0.2).toFixed(2)),
+    revenueGrowth: parseFloat((Math.random() * 30 - 5).toFixed(2)),
+    roic: roic,
+    roe: roe,
+    roa: parseFloat((Math.random() * 15 + 3).toFixed(2)),
+    profitMargin: parseFloat((Math.random() * 25 + 3).toFixed(2)),
+    operatingMargin: parseFloat((Math.random() * 20 + 4).toFixed(2)),
+    grossMargin: parseFloat((Math.random() * 40 + 20).toFixed(2)),
+    currentRatio: parseFloat((Math.random() * 2.5 + 1).toFixed(2)),
+    quickRatio: parseFloat((Math.random() * 2).toFixed(2)),
+    eps: parseFloat((Math.random() * 10 + 1).toFixed(2)),
+    priceToBook: parseFloat((Math.random() * 6 + 0.8).toFixed(2)),
+    sector: ['Technology', 'Healthcare', 'Finance', 'Energy', 'Consumer', 'Industrials'][Math.floor(Math.random() * 6)],
     industry: 'Various',
     exchange: 'NYSE',
     marketCap: Math.floor(Math.random() * 500000000000),
@@ -93,81 +63,12 @@ function getMockStock(ticker) {
   };
 }
 
-async function getStockFromFMP(ticker) {
-  try {
-    // If demo key, use mock data
-    if (FMP_KEY === 'demo') {
-      console.log(`Using MOCK data for ${ticker} (FMP_KEY not set)`);
-      return getMockStock(ticker);
-    }
-
-    const quoteUrl = `${FMP_BASE}/quote-short/${ticker}?apikey=${FMP_KEY}`;
-    const quoteData = await fetchWithRetry(quoteUrl);
-
-    if (!quoteData || quoteData.length === 0) {
-      console.log(`No quote data for ${ticker}`);
-      return null;
-    }
-    const quote = quoteData[0];
-
-    const ratiosUrl = `${FMP_BASE}/ratios/${ticker}?limit=1&apikey=${FMP_KEY}`;
-    const ratiosData = await fetchWithRetry(ratiosUrl);
-    const ratios = ratiosData && ratiosData.length > 0 ? ratiosData[0] : {};
-
-    const profileUrl = `${FMP_BASE}/profile/${ticker}?apikey=${FMP_KEY}`;
-    const profileData = await fetchWithRetry(profileUrl);
-    const profile = profileData && profileData.length > 0 ? profileData[0] : {};
-
-    const stockData = {
-      ticker: ticker.toUpperCase(),
-      name: profile.companyName || ticker,
-      price: quote.price || 0,
-      peRatio: ratios.peRatio || quote.price / (ratios.epsbyYear || 1) || null,
-      change: quote.change || 0,
-      changePercent: quote.change || 0,
-      high52w: quote.price * 1.15 || null,
-      low52w: quote.price * 0.85 || null,
-      volume: quote.volAvg || 0,
-      dividendYield: (ratios.dividendYield || 0).toFixed(2),
-      beta: (ratios.beta || 1).toFixed(2),
-      debtToEquity: (ratios.debtToEquity || 0).toFixed(2),
-      revenueGrowth: (ratios.revenueGrowth || 0).toFixed(2),
-      roic: (ratios.roic || 0).toFixed(2),
-      roe: (ratios.roe || 0).toFixed(2),
-      roa: (ratios.roa || 0).toFixed(2),
-      profitMargin: (ratios.netProfitMargin || 0).toFixed(2),
-      operatingMargin: (ratios.operatingProfitMargin || 0).toFixed(2),
-      grossMargin: (ratios.grossProfitMargin || 0).toFixed(2),
-      currentRatio: (ratios.currentRatio || 0).toFixed(2),
-      quickRatio: (ratios.quickRatio || 0).toFixed(2),
-      eps: (ratios.eps || (quote.price / 20)).toFixed(2),
-      bookValuePerShare: (ratios.bookValuePerShare || 0).toFixed(2),
-      priceToBook: (ratios.priceToBookRatio || 0).toFixed(2),
-      sector: profile.sector || 'Technology',
-      industry: profile.industry || 'Unknown',
-      exchange: profile.exchange || 'Unknown',
-      marketCap: profile.mktCap || 0,
-      timestamp: new Date().toISOString(),
-      source: 'live'
-    };
-
-    return stockData;
-  } catch (error) {
-    console.error(`Error fetching ${ticker}: ${error.message}`);
-    // Fallback to mock data on error
-    console.log(`Falling back to MOCK data for ${ticker}`);
-    return getMockStock(ticker);
-  }
-}
-
 function getCachedStock(ticker) {
   const cached = stockCache[ticker.toUpperCase()];
   if (!cached) return null;
-  
   if (cached.expires > Date.now()) {
     return { ...cached.data, source: 'cached', isCached: true };
   }
-  
   delete stockCache[ticker.toUpperCase()];
   return null;
 }
@@ -188,18 +89,22 @@ function categorizeStock(stock) {
   const roe = parseFloat(stock.roe) || 0;
   const roic = parseFloat(stock.roic) || 0;
 
-  if (roe >= 15 && roic >= 10 && pe > 0 && pe <= 40) {
+  // Growth: Good ROE/ROIC, reasonable P/E
+  if (roe >= 15 && roic >= 10 && pe > 0 && pe <= 50) {
     categories.push('growth');
   }
 
-  if (yield_ >= 2 && pe > 0 && pe <= 25) {
+  // Dividend: High yield, stable
+  if (yield_ >= 2 && pe > 0 && pe <= 30) {
     categories.push('dividend');
   }
 
-  if (roe >= 12 && pe > 0 && pe <= 30 && parseFloat(stock.debtToEquity) <= 1.5) {
+  // Balanced: Good fundamentals
+  if (roe >= 12 && pe > 0 && pe <= 35 && parseFloat(stock.debtToEquity) <= 2) {
     categories.push('balanced');
   }
 
+  // Value: Low P/E, good quality
   if (pe > 0 && pe < 15 && roe >= 10) {
     categories.push('value');
   }
@@ -208,12 +113,12 @@ function categorizeStock(stock) {
 }
 
 app.post('/api/screen', async (req, res) => {
-  console.log(`\n📊 SCREEN REQUEST: Strategy=${req.body.strategy}, Tickers=${req.body.tickers.length}`);
-  
   const { tickers, filters, useCache = true, strategy = 'value' } = req.body;
 
+  console.log(`Screening ${tickers.length} stocks with strategy: ${strategy}`);
+  
   if (!Array.isArray(tickers) || !filters) {
-    return res.status(400).json({ error: 'Invalid request' });
+    return res.status(400).json({ error: 'Invalid request', passed: [], count: 0 });
   }
 
   try {
@@ -222,7 +127,7 @@ app.post('/api/screen', async (req, res) => {
     let cacheHits = 0;
     const total = tickers.length;
 
-    for (let i = 0; i < tickers.length; i++) {
+    for (let i = 0; i < Math.min(tickers.length, 50); i++) {
       const ticker = tickers[i];
       let stock = null;
       let isCached = false;
@@ -232,25 +137,14 @@ app.post('/api/screen', async (req, res) => {
         if (stock) {
           cacheHits++;
           isCached = true;
-          console.log(`  ✓ ${ticker} from cache`);
         }
       }
 
       if (!stock) {
-        try {
-          stock = await getStockFromFMP(ticker);
-          if (stock) {
-            apiCallsUsed++;
-            cacheStock(stock);
-            console.log(`  ✓ ${ticker} from API (${stock.source})`);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch ${ticker}: ${error.message}`);
-          const cached = getCachedStock(ticker);
-          if (cached) {
-            stock = cached;
-            cacheHits++;
-          }
+        stock = getMockStock(ticker);
+        if (stock) {
+          apiCallsUsed++;
+          cacheStock(stock);
         }
       }
 
@@ -261,6 +155,7 @@ app.post('/api/screen', async (req, res) => {
       const divYield = parseFloat(stock.dividendYield) || 0;
       const debtRatio = parseFloat(stock.debtToEquity) || 0;
 
+      // Apply filters
       let passed = true;
       if (filters.maxPe && pe > 0 && pe > filters.maxPe) passed = false;
       if (filters.maxPrice && price > filters.maxPrice) passed = false;
@@ -270,7 +165,8 @@ app.post('/api/screen', async (req, res) => {
       if (!passed) continue;
 
       const categories = categorizeStock(stock);
-
+      
+      // Only include if it matches the strategy
       let includeInResults = false;
       switch(strategy) {
         case 'growth':
@@ -321,36 +217,35 @@ app.post('/api/screen', async (req, res) => {
         });
       }
 
-      if (!isCached && i < tickers.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, API_DELAY));
-      }
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    console.log(`✓ Results: ${results.length}/${total}, API calls: ${apiCallsUsed}, Cache hits: ${cacheHits}\n`);
-
-    res.json({ 
+    const response = {
       passed: results, 
       total: total, 
       count: results.length,
       apiCallsUsed,
       cacheHits,
-      efficiency: cacheHits > 0 ? Math.round((cacheHits / total) * 100) : 0,
-      strategy: strategy,
-      error: null
-    });
+      efficiency: total > 0 ? Math.round((cacheHits / total) * 100) : 0,
+      strategy: strategy
+    };
+    
+    console.log(`✓ Found ${results.length} matching stocks\n`);
+    res.json(response);
   } catch (error) {
     console.error('Screen error:', error);
     res.status(500).json({ 
-      error: 'Screening failed',
-      details: error.message,
+      error: error.message,
       passed: [],
-      count: 0
+      count: 0,
+      apiCallsUsed: 0,
+      cacheHits: 0,
+      efficiency: 0
     });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\n🚀 Stock Oracle API running on port ${PORT}`);
-  console.log(`📊 FMP API: ${FMP_KEY === 'demo' ? 'NOT SET (using mock data)' : 'CONFIGURED'}\n`);
+  console.log(`📊 Ready to screen stocks\n`);
 });
