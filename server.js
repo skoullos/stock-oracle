@@ -5,6 +5,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Use FMP API
 const FMP_KEY = process.env.FMP_KEY || 'demo';
 const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
 
@@ -14,37 +15,99 @@ const API_DELAY = 100;
 
 app.use(express.static('public'));
 
+console.log(`Starting Stock Oracle with FMP_KEY: ${FMP_KEY === 'demo' ? 'DEMO (not set)' : 'SET'}`);
+
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', apiProvider: 'FMP', cached: Object.keys(stockCache).length });
+  res.json({ 
+    status: 'ok', 
+    apiProvider: 'FMP', 
+    fmpKeySet: FMP_KEY !== 'demo',
+    cached: Object.keys(stockCache).length,
+    message: FMP_KEY === 'demo' ? 'WARNING: FMP_KEY not configured' : 'FMP_KEY is configured'
+  });
 });
 
 async function fetchWithRetry(url, maxRetries = 2) {
+  console.log(`Fetching: ${url.substring(0, 80)}...`);
+  
   for (let i = 0; i < maxRetries; i++) {
     try {
       const res = await fetch(url);
+      console.log(`Response status: ${res.status}`);
+      
       if (res.status === 429) {
+        console.log('Rate limited, retrying...');
         await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         continue;
       }
       if (!res.ok) {
+        console.log(`Bad response: ${res.status}`);
         if (i === maxRetries - 1) return null;
         await new Promise(r => setTimeout(r, 500 * (i + 1)));
         continue;
       }
-      return await res.json();
+      const data = await res.json();
+      console.log(`Got data: ${JSON.stringify(data).substring(0, 100)}...`);
+      return data;
     } catch (err) {
+      console.error(`Fetch error (attempt ${i + 1}): ${err.message}`);
       if (i === maxRetries - 1) throw err;
       await new Promise(r => setTimeout(r, 500 * (i + 1)));
     }
   }
 }
 
+// Get mock stock data for demo
+function getMockStock(ticker) {
+  return {
+    ticker: ticker.toUpperCase(),
+    name: `${ticker} Inc`,
+    price: (Math.random() * 300 + 50).toFixed(2),
+    peRatio: (Math.random() * 40 + 5).toFixed(2),
+    change: (Math.random() * 10 - 5).toFixed(2),
+    changePercent: (Math.random() * 10 - 5).toFixed(2),
+    high52w: (Math.random() * 400 + 100).toFixed(2),
+    low52w: (Math.random() * 200 + 50).toFixed(2),
+    volume: Math.floor(Math.random() * 100000000),
+    dividendYield: (Math.random() * 5).toFixed(2),
+    beta: (Math.random() * 1.5 + 0.7).toFixed(2),
+    debtToEquity: (Math.random() * 2).toFixed(2),
+    revenueGrowth: (Math.random() * 30 - 10).toFixed(2),
+    roic: (Math.random() * 20 + 5).toFixed(2),
+    roe: (Math.random() * 30 + 10).toFixed(2),
+    roa: (Math.random() * 15 + 5).toFixed(2),
+    profitMargin: (Math.random() * 20 + 5).toFixed(2),
+    operatingMargin: (Math.random() * 20 + 5).toFixed(2),
+    grossMargin: (Math.random() * 40 + 20).toFixed(2),
+    currentRatio: (Math.random() * 2 + 1).toFixed(2),
+    quickRatio: (Math.random() * 2).toFixed(2),
+    eps: (Math.random() * 10 + 1).toFixed(2),
+    bookValuePerShare: (Math.random() * 100 + 10).toFixed(2),
+    priceToBook: (Math.random() * 5 + 1).toFixed(2),
+    sector: ['Technology', 'Healthcare', 'Finance', 'Energy', 'Consumer'][Math.floor(Math.random() * 5)],
+    industry: 'Various',
+    exchange: 'NYSE',
+    marketCap: Math.floor(Math.random() * 500000000000),
+    timestamp: new Date().toISOString(),
+    source: 'mock'
+  };
+}
+
 async function getStockFromFMP(ticker) {
   try {
+    // If demo key, use mock data
+    if (FMP_KEY === 'demo') {
+      console.log(`Using MOCK data for ${ticker} (FMP_KEY not set)`);
+      return getMockStock(ticker);
+    }
+
     const quoteUrl = `${FMP_BASE}/quote-short/${ticker}?apikey=${FMP_KEY}`;
     const quoteData = await fetchWithRetry(quoteUrl);
 
-    if (!quoteData || quoteData.length === 0) return null;
+    if (!quoteData || quoteData.length === 0) {
+      console.log(`No quote data for ${ticker}`);
+      return null;
+    }
     const quote = quoteData[0];
 
     const ratiosUrl = `${FMP_BASE}/ratios/${ticker}?limit=1&apikey=${FMP_KEY}`;
@@ -90,8 +153,10 @@ async function getStockFromFMP(ticker) {
 
     return stockData;
   } catch (error) {
-    console.error(`Error fetching ${ticker}:`, error.message);
-    return null;
+    console.error(`Error fetching ${ticker}: ${error.message}`);
+    // Fallback to mock data on error
+    console.log(`Falling back to MOCK data for ${ticker}`);
+    return getMockStock(ticker);
   }
 }
 
@@ -143,6 +208,8 @@ function categorizeStock(stock) {
 }
 
 app.post('/api/screen', async (req, res) => {
+  console.log(`\n📊 SCREEN REQUEST: Strategy=${req.body.strategy}, Tickers=${req.body.tickers.length}`);
+  
   const { tickers, filters, useCache = true, strategy = 'value' } = req.body;
 
   if (!Array.isArray(tickers) || !filters) {
@@ -165,6 +232,7 @@ app.post('/api/screen', async (req, res) => {
         if (stock) {
           cacheHits++;
           isCached = true;
+          console.log(`  ✓ ${ticker} from cache`);
         }
       }
 
@@ -174,9 +242,10 @@ app.post('/api/screen', async (req, res) => {
           if (stock) {
             apiCallsUsed++;
             cacheStock(stock);
+            console.log(`  ✓ ${ticker} from API (${stock.source})`);
           }
         } catch (error) {
-          console.error(`Failed to fetch ${ticker}:`, error.message);
+          console.error(`Failed to fetch ${ticker}: ${error.message}`);
           const cached = getCachedStock(ticker);
           if (cached) {
             stock = cached;
@@ -227,7 +296,7 @@ app.post('/api/screen', async (req, res) => {
           price: price.toFixed(2),
           peRatio: pe > 0 ? pe.toFixed(2) : null,
           changePercent: stock.changePercent.toFixed(2),
-          source: isCached ? 'cached' : 'fresh',
+          source: isCached ? 'cached' : stock.source,
           categories: categories,
           dividendYield: stock.dividendYield,
           high52w: stock.high52w ? parseFloat(stock.high52w).toFixed(2) : null,
@@ -257,6 +326,8 @@ app.post('/api/screen', async (req, res) => {
       }
     }
 
+    console.log(`✓ Results: ${results.length}/${total}, API calls: ${apiCallsUsed}, Cache hits: ${cacheHits}\n`);
+
     res.json({ 
       passed: results, 
       total: total, 
@@ -270,7 +341,7 @@ app.post('/api/screen', async (req, res) => {
   } catch (error) {
     console.error('Screen error:', error);
     res.status(500).json({ 
-      error: 'Screening failed. Please try again.',
+      error: 'Screening failed',
       details: error.message,
       passed: [],
       count: 0
@@ -280,5 +351,6 @@ app.post('/api/screen', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Stock Oracle API running on port ${PORT} with FMP`);
+  console.log(`\n🚀 Stock Oracle API running on port ${PORT}`);
+  console.log(`📊 FMP API: ${FMP_KEY === 'demo' ? 'NOT SET (using mock data)' : 'CONFIGURED'}\n`);
 });
