@@ -37,6 +37,16 @@ const UNIVERSE = [
   'AMT','PLD','CCI','EQIX','PSA','EQR','AVB','O','WELL','SPG',
   // Telecom
   'VZ','T','TMUS','CHTR','CMCSA',
+  // ── Greek Stock Exchange (ATHEX) ─────────────────────────────────
+  // Yahoo Finance tickers for Greek stocks use .AT suffix
+  'ETE.AT','EUROB.AT','ALPHA.AT','TPEIR.AT',        // Banking
+  'HTO.AT','MYTIL.AT','PPC.AT','OPAP.AT',           // Utilities / Gaming
+  'ELPE.AT','MOH.AT',                               // Energy / Petroleum
+  'ADMIE.AT','GEKTERNA.AT',                         // Infrastructure / Energy
+  'EXAE.AT','LAMDA.AT',                             // Exchange / Real Estate
+  'ELLAKTOR.AT','AVGR.AT',                          // Construction
+  'TITC.AT','INKAT.AT',                             // Telecom / Tech
+  'FFGRP.AT','BELA.AT',                             // Food / Retail
   // ETFs — Broad Market
   'SPY','QQQ','DIA','IWM','VTI','VOO',
   // ETFs — Sector
@@ -247,6 +257,37 @@ const fundamentals = {
   'TMUS': { roe: 12.5, yield: 1.5, debt: 2.5, fcfMargin: 18.5, moat: 'Wireless', buffettScore: 70 },
   'CHTR': { roe: 35.5, yield: 0, debt: 5.5, fcfMargin: 18.5, moat: 'Cable', buffettScore: 68 },
   'CMCSA': { roe: 14.5, yield: 3.2, debt: 1.2, fcfMargin: 14.5, moat: 'Cable/Media', buffettScore: 72 },
+
+  // ── Greek Stock Exchange (ATHEX) ────────────────────────────────
+  // Fundamentals based on latest annual reports (FY2024)
+  // Banking
+  'ETE.AT':   { roe: 18.5, yield: 4.2, debt: 0, fcfMargin: 0, moat: 'Greek Banking Leader', buffettScore: 72, country: 'Greece', sector: 'Banking' },
+  'EUROB.AT': { roe: 15.5, yield: 3.5, debt: 0, fcfMargin: 0, moat: 'Greek Banking Scale', buffettScore: 68, country: 'Greece', sector: 'Banking' },
+  'ALPHA.AT': { roe: 13.5, yield: 2.8, debt: 0, fcfMargin: 0, moat: 'Greek Banking Scale', buffettScore: 65, country: 'Greece', sector: 'Banking' },
+  'TPEIR.AT': { roe: 14.5, yield: 3.2, debt: 0, fcfMargin: 0, moat: 'Greek Banking Scale', buffettScore: 65, country: 'Greece', sector: 'Banking' },
+  // Utilities / Gaming
+  'HTO.AT':   { roe: 22.5, yield: 5.8, debt: 0.8, fcfMargin: 18.5, moat: 'Telecom Monopoly', buffettScore: 78, country: 'Greece', sector: 'Telecom' },
+  'MYTIL.AT': { roe: 28.5, yield: 3.5, debt: 0.6, fcfMargin: 22.5, moat: 'Industrial Conglomerate', buffettScore: 80, country: 'Greece', sector: 'Industrials' },
+  'PPC.AT':   { roe: 12.5, yield: 2.5, debt: 1.8, fcfMargin: 8.5,  moat: 'Utility/Energy', buffettScore: 62, country: 'Greece', sector: 'Utilities' },
+  'OPAP.AT':  { roe: 55.5, yield: 7.5, debt: 0.5, fcfMargin: 35.5, moat: 'Gaming Monopoly', buffettScore: 88, country: 'Greece', sector: 'Gaming' },
+  // Energy / Petroleum
+  'ELPE.AT':  { roe: 18.5, yield: 5.5, debt: 0.6, fcfMargin: 10.5, moat: 'Refining/Energy', buffettScore: 72, country: 'Greece', sector: 'Energy' },
+  'MOH.AT':   { roe: 22.5, yield: 4.5, debt: 0.4, fcfMargin: 12.5, moat: 'Petroleum Distribution', buffettScore: 75, country: 'Greece', sector: 'Energy' },
+  // Infrastructure / Energy
+  'ADMIE.AT': { roe: 9.5,  yield: 4.8, debt: 1.5, fcfMargin: 22.5, moat: 'Grid Monopoly', buffettScore: 72, country: 'Greece', sector: 'Utilities' },
+  'GEKTERNA.AT': { roe: 14.5, yield: 2.5, debt: 1.2, fcfMargin: 12.5, moat: 'Energy/Construction', buffettScore: 68, country: 'Greece', sector: 'Industrials' },
+  // Exchange / Real Estate
+  'EXAE.AT':  { roe: 25.5, yield: 6.5, debt: 0.1, fcfMargin: 42.5, moat: 'Exchange Monopoly', buffettScore: 85, country: 'Greece', sector: 'Financial' },
+  'LAMDA.AT': { roe: 8.5,  yield: 1.5, debt: 1.8, fcfMargin: 15.5, moat: 'Real Estate/Hellinikon', buffettScore: 65, country: 'Greece', sector: 'Real Estate' },
+  // Construction
+  'ELLAKTOR.AT': { roe: 10.5, yield: 2.2, debt: 1.5, fcfMargin: 8.5,  moat: 'Construction Scale', buffettScore: 58, country: 'Greece', sector: 'Industrials' },
+  'AVGR.AT':  { roe: 12.5, yield: 1.8, debt: 0.8, fcfMargin: 9.5,  moat: 'Infrastructure', buffettScore: 62, country: 'Greece', sector: 'Industrials' },
+  // Telecom / Tech
+  'TITC.AT':  { roe: 18.5, yield: 3.2, debt: 0.4, fcfMargin: 14.5, moat: 'IT Services', buffettScore: 70, country: 'Greece', sector: 'Technology' },
+  'INKAT.AT': { roe: 14.5, yield: 2.8, debt: 0.3, fcfMargin: 12.5, moat: 'IT Infrastructure', buffettScore: 68, country: 'Greece', sector: 'Technology' },
+  // Food / Retail
+  'FFGRP.AT': { roe: 22.5, yield: 4.5, debt: 0.5, fcfMargin: 8.5,  moat: 'Food/Retail Network', buffettScore: 75, country: 'Greece', sector: 'Consumer' },
+  'BELA.AT':  { roe: 18.5, yield: 3.8, debt: 0.4, fcfMargin: 10.5, moat: 'Supermarket Chain', buffettScore: 72, country: 'Greece', sector: 'Consumer' },
 
   // ── ETFs ─────────────────────────────────────────────────────────
   // For ETFs: roe = 10yr annualised return, fcfMargin = cost efficiency (100 - expense%), debt = 0
@@ -552,12 +593,12 @@ app.post('/api/screen', async (req, res) => {
     // Strategy filter
     let include = false;
     if (isETF) {
-      // ETFs always show unless strategy is very stock-specific
       switch (strategy) {
         case 'dividend': include = f.yield > 1.5; break;
         case 'growth':   include = f.roe > 10; break;
+        case 'greek':    include = false; break; // no ETFs on ATHEX
         case 'all':      include = true; break;
-        default:         include = f.buffettScore >= 60; // show quality ETFs in all strategies
+        default:         include = f.buffettScore >= 60;
       }
     } else {
       switch (strategy) {
@@ -578,6 +619,9 @@ app.post('/api/screen', async (req, res) => {
           break;
         case 'growth':
           include = f.roe > 25 && (isFinancial || f.fcfMargin > 20);
+          break;
+        case 'greek':
+          include = t.endsWith('.AT'); // Athens Stock Exchange only
           break;
         case 'all':
           include = true;

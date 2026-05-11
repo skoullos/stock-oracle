@@ -370,6 +370,7 @@
         <button class="strat-btn" onclick="setStrategy('dividend',this)">💰 I want income &amp; dividends</button>
         <button class="strat-btn" onclick="setStrategy('graham',this)">🏷️ I want cheap &amp; safe stocks</button>
         <button class="strat-btn" onclick="setStrategy('all',this)">📦 Show me ETFs &amp; funds</button>
+        <button class="strat-btn" onclick="setStrategy('greek',this)">🇬🇷 Greek stocks only</button>
       </div>
       <p style="font-size:10px;color:var(--muted);margin-top:12px">That's all you need to set! Click the Scan button below and we'll find the best options for you.</p>
     </div>
@@ -385,6 +386,7 @@
         <button class="strat-btn" onclick="setStrategy('dividend',this)">💰 Dividend Income <i class="tip flip-down" data-tip="Strategy focused on earning regular cash payments (dividends). Good for passive income.">?</i></button>
         <button class="strat-btn" onclick="setStrategy('growth',this)">🚀 High Growth <i class="tip flip-down" data-tip="Targets companies generating exceptional returns and reinvesting profits aggressively.">?</i></button>
         <button class="strat-btn" onclick="setStrategy('all',this)">🌍 Show All <i class="tip flip-down" data-tip="Removes the strategy filter. Shows all stocks passing your manual filters, sorted by Oracle Score.">?</i></button>
+        <button class="strat-btn" onclick="setStrategy('greek',this)">🇬🇷 Greek Market <i class="tip flip-down" data-tip="Shows only stocks from the Athens Stock Exchange (ATHEX). Includes banks, energy, gaming, utilities, retail and more.">?</i></button>
       </div>
       <div class="strat-desc" id="stratDesc">ROE &gt; 15% · FCF Margin &gt; 10% · P/E &lt; 30 · Debt/Equity &lt; 2 — Companies with durable competitive advantage and consistent earnings</div>
     </div>
@@ -642,7 +644,8 @@
     graham:   'P/E < 15 · Dividend > 2% · Debt/Equity < 1 — Graham: "Buy at a significant discount to intrinsic value — margin of safety"',
     dividend: 'Yield > 2.5% · ROE > 10% · Stable cash flows — Focus on passive income from quality dividend-paying companies',
     growth:   'ROE > 25% · FCF Margin > 20% — High-compounding businesses with exceptional capital efficiency',
-    all:      'No strategy filter — shows all stocks and ETFs passing your manual filters sorted by Oracle Score'
+    all:      'No strategy filter — shows all stocks and ETFs passing your manual filters sorted by Oracle Score',
+    greek:    '🇬🇷 Athens Stock Exchange (ATHEX) — 20 top Greek stocks across banking, energy, gaming, utilities, telecom, and retail'
   };
 
   const stratPresets = {
@@ -653,6 +656,7 @@
     dividend: { maxPe: 25,  minRoe: 10, minFcfMargin: 0,  minDividend: 2.5, maxDebt: 2.0, minBuffettScore: 55, maxPrice: 2000 },
     growth:   { maxPe: 60,  minRoe: 25, minFcfMargin: 20, minDividend: 0,   maxDebt: 1.0, minBuffettScore: 60, maxPrice: 2000 },
     all:      { maxPe: 100, minRoe: 0,  minFcfMargin: 0,  minDividend: 0,   maxDebt: 10,  minBuffettScore: 0,  maxPrice: 2000 },
+    greek:    { maxPe: 100, minRoe: 0,  minFcfMargin: 0,  minDividend: 0,   maxDebt: 10,  minBuffettScore: 0,  maxPrice: 2000 },
   };
 
   function setSlider(id, val, displayId, fmt) {
@@ -829,6 +833,7 @@
     const vc = s.oracleColor || (sc >= 80 ? '#4ade80' : sc >= 60 ? '#fbbf24' : '#f87171');
     const dot = s.source === 'live' ? '<span class="live-dot"></span>' : '<span class="demo-dot"></span>';
     const etfBadge = s.isETF ? `<span style="font-size:8px;background:rgba(99,102,241,0.2);color:#818cf8;border:1px solid rgba(99,102,241,0.3);padding:1px 6px;border-radius:8px">ETF</span>` : '';
+    const greekBadge = s.ticker && s.ticker.endsWith('.AT') ? `<span style="font-size:10px" title="Athens Stock Exchange">🇬🇷</span>` : '';
     const starred = isStarred(s.ticker);
     const safeS = JSON.stringify(s).replace(/'/g, '&#39;');
 
@@ -837,7 +842,7 @@
       const summary = buildSimpleSummary(s);
       return `<div class="simple-card" onclick='openModal(${safeS})'>
         <button class="star-btn ${starred ? 'starred' : ''}" onclick='toggleStar(event, ${safeS})'>${starred ? '★' : '☆'}</button>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">${dot}<span class="simple-ticker">${s.ticker}</span>${etfBadge}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">${dot}<span class="simple-ticker">${s.ticker}</span>${etfBadge}${greekBadge}</div>
         <div class="simple-name">${s.name}</div>
         <div class="simple-price">$${s.price} <span style="font-size:11px;color:${s.changePercent>=0?'var(--green)':'var(--red)'}">${changeSign}${s.changePercent}%</span></div>
         <div class="simple-score-bar"><div class="simple-score-fill" style="width:${sc}%;background:${vc}"></div></div>
@@ -868,7 +873,7 @@
     return `<div class="stock-card" onclick='openModal(${safeS})'>
         <button class="star-btn ${starred ? 'starred' : ''}" onclick='toggleStar(event, ${safeS})'>${starred ? '★' : '☆'}</button>
         <div class="card-header">
-          <div class="card-ticker">${dot} ${s.ticker} ${etfBadge}</div>
+          <div class="card-ticker">${dot} ${s.ticker} ${etfBadge}${greekBadge}</div>
           <div style="background:${vc}22;color:${vc};border:1px solid ${vc}44;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">${sc}</div>
         </div>
         <div class="card-name">${s.name}</div>
