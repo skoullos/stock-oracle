@@ -4,10 +4,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
 app.use(express.static('public'));
 
-// Simple realistic demo data - no API calls, just works
+// Demo realistic stock data
 const demoData = [
   { ticker: 'AAPL', name: 'Apple Inc.', price: 189.45, pe: 31.2, yield: 0.4, roe: 95.5, beta: 1.2, debt: 1.1 },
   { ticker: 'MSFT', name: 'Microsoft Corp.', price: 424.65, pe: 36.8, yield: 0.7, roe: 44.2, beta: 0.9, debt: 0.5 },
@@ -61,20 +60,29 @@ const demoData = [
 ];
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', mode: 'demo', message: 'Demo mode - using realistic data' });
+  res.json({ status: 'ok', mode: 'demo' });
 });
 
-app.post('/api/screen', async (req, res) => {
-  const { tickers, filters } = req.body;
+app.post('/api/screen', (req, res) => {
+  console.log('===== SCREEN REQUEST =====');
+  console.log('Body:', JSON.stringify(req.body, null, 2));
 
-  console.log(`\n🔍 Screening ${tickers.length} stocks`);
+  const { tickers, filters = {} } = req.body;
+
+  console.log(`Screening ${tickers.length} tickers`);
+  console.log(`Filters: `, filters);
 
   const results = [];
 
   for (const ticker of tickers) {
     const stock = demoData.find(s => s.ticker === ticker.toUpperCase());
     
-    if (!stock) continue;
+    if (!stock) {
+      console.log(`  ❌ ${ticker} not in demo data`);
+      continue;
+    }
+
+    console.log(`  ✓ ${ticker} found`);
 
     const price = stock.price;
     const pe = stock.pe;
@@ -83,36 +91,58 @@ app.post('/api/screen', async (req, res) => {
     const debt = stock.debt;
 
     // Apply filters
-    if (filters.maxPe && pe > filters.maxPe) continue;
-    if (filters.maxPrice && price > filters.maxPrice) continue;
-    if (filters.minDividend && yield_ < filters.minDividend) continue;
-    if (filters.maxDebt && debt > filters.maxDebt) continue;
+    let skip = false;
+    if (filters.maxPe && pe > filters.maxPe) {
+      console.log(`    -> skip: PE ${pe} > ${filters.maxPe}`);
+      skip = true;
+    }
+    if (filters.maxPrice && price > filters.maxPrice) {
+      console.log(`    -> skip: price ${price} > ${filters.maxPrice}`);
+      skip = true;
+    }
+    if (filters.minDividend && yield_ < filters.minDividend) {
+      console.log(`    -> skip: yield ${yield_} < ${filters.minDividend}`);
+      skip = true;
+    }
+    if (filters.maxDebt && debt > filters.maxDebt) {
+      console.log(`    -> skip: debt ${debt} > ${filters.maxDebt}`);
+      skip = true;
+    }
+
+    if (skip) continue;
 
     results.push({
       ticker: stock.ticker,
       name: stock.name,
-      price: price.toFixed(2),
-      peRatio: pe.toFixed(2),
-      dividendYield: yield_.toFixed(2),
-      roe: roe.toFixed(2),
-      beta: stock.beta.toFixed(2),
-      debtToEquity: debt.toFixed(2),
-      changePercent: ((Math.random() - 0.5) * 5).toFixed(2)
+      price: parseFloat(price.toFixed(2)),
+      peRatio: parseFloat(pe.toFixed(2)),
+      dividendYield: parseFloat(yield_.toFixed(2)),
+      roe: parseFloat(roe.toFixed(2)),
+      beta: parseFloat(stock.beta.toFixed(2)),
+      debtToEquity: parseFloat(debt.toFixed(2)),
+      changePercent: parseFloat(((Math.random() - 0.5) * 5).toFixed(2))
     });
+    console.log(`    -> INCLUDED`);
   }
 
-  console.log(`✅ Found ${results.length} stocks\n`);
+  console.log(`Final results: ${results.length} stocks`);
+  console.log('===== RESPONSE =====');
 
-  res.json({
+  const response = {
     passed: results,
     count: results.length,
     total: tickers.length,
     apiCallsUsed: 0,
+    cacheHits: 0,
+    efficiency: 0,
     mode: 'demo'
-  });
+  };
+
+  console.log(JSON.stringify(response, null, 2));
+  res.json(response);
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`📊 Stock Oracle running on port ${PORT}\n`);
+  console.log(`Stock Oracle listening on port ${PORT}`);
 });
