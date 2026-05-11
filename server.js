@@ -5,7 +5,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const FMP_KEY = process.env.FMP_KEY || 'demo';
+// Use FMP_API_key (the one you set in Vercel)
+const FMP_KEY = process.env.FMP_API_key;
 const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
 
 let stockCache = {};
@@ -14,12 +15,13 @@ const CACHE_TTL = 24 * 60 * 60 * 1000;
 app.use(express.static('public'));
 
 console.log(`\n🚀 Stock Oracle API running\n`);
-console.log(`FMP_KEY: ${FMP_KEY === 'demo' ? 'NOT SET - DEMO MODE' : 'CONFIGURED - LIVE MODE'}\n`);
+console.log(`FMP_API_key status: ${FMP_KEY ? '✅ SET' : '❌ NOT SET'}\n`);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    mode: FMP_KEY === 'demo' ? 'demo' : 'live',
+    mode: FMP_KEY ? 'live' : 'demo',
+    fmpKeySet: !!FMP_KEY,
     cached: Object.keys(stockCache).length
   });
 });
@@ -29,6 +31,7 @@ async function fetchWithRetry(url, maxRetries = 2) {
     try {
       const res = await fetch(url);
       if (res.status === 429) {
+        console.log(`Rate limited, retrying...`);
         await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         continue;
       }
@@ -47,7 +50,13 @@ async function fetchWithRetry(url, maxRetries = 2) {
 
 async function getStockFromFMP(ticker) {
   try {
-    // Get quote (real-time price)
+    if (!FMP_KEY) {
+      console.log(`❌ FMP_API_key not set, cannot fetch ${ticker}`);
+      return null;
+    }
+
+    console.log(`Fetching ${ticker} from FMP...`);
+
     const quoteUrl = `${FMP_BASE}/quote-short/${ticker}?apikey=${FMP_KEY}`;
     const quoteData = await fetchWithRetry(quoteUrl);
 
@@ -56,22 +65,19 @@ async function getStockFromFMP(ticker) {
       return null;
     }
     const quote = quoteData[0];
+    console.log(`✓ ${ticker}: $${quote.price}`);
 
-    // Get financial ratios
     const ratiosUrl = `${FMP_BASE}/ratios/${ticker}?limit=1&apikey=${FMP_KEY}`;
     const ratiosData = await fetchWithRetry(ratiosUrl);
     const ratios = ratiosData && ratiosData.length > 0 ? ratiosData[0] : {};
 
-    // Get profile (company name, sector, etc.)
     const profileUrl = `${FMP_BASE}/profile/${ticker}?apikey=${FMP_KEY}`;
     const profileData = await fetchWithRetry(profileUrl);
     const profile = profileData && profileData.length > 0 ? profileData[0] : {};
 
-    console.log(`✓ ${ticker}: $${quote.price} | ${profile.companyName || ticker}`);
-
     const stockData = {
       ticker: ticker.toUpperCase(),
-      name: profile.companyName || ticker, // Real company name from FMP
+      name: profile.companyName || ticker,
       price: quote.price || 0,
       peRatio: ratios.peRatio ? parseFloat(ratios.peRatio).toFixed(2) : null,
       change: quote.change || 0,
@@ -79,20 +85,20 @@ async function getStockFromFMP(ticker) {
       high52w: quote.yearHigh || null,
       low52w: quote.yearLow || null,
       volume: quote.volAvg || 0,
-      dividendYield: ratios.dividendYield ? parseFloat(ratios.dividendYield).toFixed(2) : (Math.random() * 4 + 0.5).toFixed(2),
-      beta: ratios.beta ? parseFloat(ratios.beta).toFixed(2) : (Math.random() * 1.5 + 0.6).toFixed(2),
-      debtToEquity: ratios.debtToEquity ? parseFloat(ratios.debtToEquity).toFixed(2) : (Math.random() * 2 + 0.2).toFixed(2),
-      revenueGrowth: ratios.revenueGrowth ? parseFloat(ratios.revenueGrowth).toFixed(2) : (Math.random() * 30 - 5).toFixed(2),
-      roic: ratios.roic ? parseFloat(ratios.roic).toFixed(2) : (Math.random() * 20 + 8).toFixed(2),
-      roe: ratios.roe ? parseFloat(ratios.roe).toFixed(2) : (Math.random() * 30 + 10).toFixed(2),
-      roa: ratios.roa ? parseFloat(ratios.roa).toFixed(2) : (Math.random() * 15 + 3).toFixed(2),
-      profitMargin: ratios.netProfitMargin ? parseFloat(ratios.netProfitMargin).toFixed(2) : (Math.random() * 25 + 3).toFixed(2),
-      operatingMargin: ratios.operatingProfitMargin ? parseFloat(ratios.operatingProfitMargin).toFixed(2) : (Math.random() * 20 + 4).toFixed(2),
-      grossMargin: ratios.grossProfitMargin ? parseFloat(ratios.grossProfitMargin).toFixed(2) : (Math.random() * 40 + 20).toFixed(2),
-      currentRatio: ratios.currentRatio ? parseFloat(ratios.currentRatio).toFixed(2) : (Math.random() * 2.5 + 1).toFixed(2),
-      quickRatio: ratios.quickRatio ? parseFloat(ratios.quickRatio).toFixed(2) : (Math.random() * 2).toFixed(2),
-      eps: ratios.eps ? parseFloat(ratios.eps).toFixed(2) : (Math.random() * 10 + 1).toFixed(2),
-      priceToBook: ratios.priceToBookRatio ? parseFloat(ratios.priceToBookRatio).toFixed(2) : (Math.random() * 6 + 0.8).toFixed(2),
+      dividendYield: ratios.dividendYield ? parseFloat(ratios.dividendYield).toFixed(2) : null,
+      beta: ratios.beta ? parseFloat(ratios.beta).toFixed(2) : null,
+      debtToEquity: ratios.debtToEquity ? parseFloat(ratios.debtToEquity).toFixed(2) : null,
+      revenueGrowth: ratios.revenueGrowth ? parseFloat(ratios.revenueGrowth).toFixed(2) : null,
+      roic: ratios.roic ? parseFloat(ratios.roic).toFixed(2) : null,
+      roe: ratios.roe ? parseFloat(ratios.roe).toFixed(2) : null,
+      roa: ratios.roa ? parseFloat(ratios.roa).toFixed(2) : null,
+      profitMargin: ratios.netProfitMargin ? parseFloat(ratios.netProfitMargin).toFixed(2) : null,
+      operatingMargin: ratios.operatingProfitMargin ? parseFloat(ratios.operatingProfitMargin).toFixed(2) : null,
+      grossMargin: ratios.grossProfitMargin ? parseFloat(ratios.grossProfitMargin).toFixed(2) : null,
+      currentRatio: ratios.currentRatio ? parseFloat(ratios.currentRatio).toFixed(2) : null,
+      quickRatio: ratios.quickRatio ? parseFloat(ratios.quickRatio).toFixed(2) : null,
+      eps: ratios.eps ? parseFloat(ratios.eps).toFixed(2) : null,
+      priceToBook: ratios.priceToBookRatio ? parseFloat(ratios.priceToBookRatio).toFixed(2) : null,
       sector: profile.sector || 'Unknown',
       industry: profile.industry || 'Unknown',
       exchange: profile.exchange || 'Unknown',
@@ -156,7 +162,7 @@ function categorizeStock(stock) {
 app.post('/api/screen', async (req, res) => {
   const { tickers, filters, useCache = true, strategy = 'value' } = req.body;
 
-  console.log(`\n📊 Screening ${tickers.length} stocks | Strategy: ${strategy} | Mode: ${FMP_KEY === 'demo' ? 'DEMO' : 'LIVE'}`);
+  console.log(`\n📊 Screening ${tickers.length} stocks | Strategy: ${strategy} | Mode: ${FMP_KEY ? 'LIVE' : 'DEMO'}`);
   
   if (!Array.isArray(tickers) || !filters) {
     return res.status(400).json({ error: 'Invalid request', passed: [], count: 0 });
@@ -173,7 +179,6 @@ app.post('/api/screen', async (req, res) => {
       let stock = null;
       let isCached = false;
 
-      // Try cache first
       if (useCache) {
         stock = getCachedStock(ticker);
         if (stock) {
@@ -182,7 +187,6 @@ app.post('/api/screen', async (req, res) => {
         }
       }
 
-      // Fetch from FMP if not cached
       if (!stock) {
         stock = await getStockFromFMP(ticker);
         if (stock) {
@@ -198,7 +202,6 @@ app.post('/api/screen', async (req, res) => {
       const divYield = parseFloat(stock.dividendYield) || 0;
       const debtRatio = parseFloat(stock.debtToEquity) || 0;
 
-      // Apply filters
       let passed = true;
       if (filters.maxPe && pe > 0 && pe > filters.maxPe) passed = false;
       if (filters.maxPrice && price > filters.maxPrice) passed = false;
@@ -270,7 +273,7 @@ app.post('/api/screen', async (req, res) => {
       cacheHits,
       efficiency: total > 0 ? Math.round((cacheHits / total) * 100) : 0,
       strategy: strategy,
-      mode: FMP_KEY === 'demo' ? 'demo' : 'live'
+      mode: FMP_KEY ? 'live' : 'demo'
     };
     
     console.log(`✓ Found ${results.length} matching stocks\n`);
