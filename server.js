@@ -256,3 +256,35 @@ app.post('/api/screen', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Stock Oracle on port ${PORT} | Universe: ${UNIVERSE.length} stocks`));
+
+// Historical price data for chart (1 year, weekly)
+app.get('/api/history/:ticker', async (req, res) => {
+  const { ticker } = req.params;
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1wk&range=1y`;
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+    });
+    const data = await r.json();
+    const result = data?.chart?.result?.[0];
+    if (!result) return res.json({ prices: [], error: 'No data' });
+
+    const timestamps = result.timestamp || [];
+    const closes = result.indicators?.quote?.[0]?.close || [];
+    const prices = timestamps.map((t, i) => ({
+      date: new Date(t * 1000).toISOString().slice(0, 10),
+      price: closes[i] ? parseFloat(closes[i].toFixed(2)) : null
+    })).filter(p => p.price !== null);
+
+    const meta = result.meta || {};
+    res.json({
+      prices,
+      ticker: ticker.toUpperCase(),
+      name: meta.longName || meta.shortName || ticker,
+      currency: meta.currency || 'USD',
+      exchange: meta.exchangeName || ''
+    });
+  } catch (e) {
+    res.json({ prices: [], error: e.message });
+  }
+});
