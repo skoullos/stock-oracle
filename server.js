@@ -37,16 +37,28 @@ const UNIVERSE = [
   'AMT','PLD','CCI','EQIX','PSA','EQR','AVB','O','WELL','SPG',
   // Telecom
   'VZ','T','TMUS','CHTR','CMCSA',
-  // ── Greek Stock Exchange (ATHEX) ─────────────────────────────────
-  // Yahoo Finance tickers for Greek stocks use .AT suffix
-  'ETE.AT','EUROB.AT','ALPHA.AT','TPEIR.AT',        // Banking
-  'HTO.AT','MYTIL.AT','PPC.AT','OPAP.AT',           // Utilities / Gaming
-  'ELPE.AT','MOH.AT',                               // Energy / Petroleum
-  'ADMIE.AT','GEKTERNA.AT',                         // Infrastructure / Energy
-  'EXAE.AT','LAMDA.AT',                             // Exchange / Real Estate
-  'ELLAKTOR.AT','AVGR.AT',                          // Construction
-  'TITC.AT','INKAT.AT',                             // Telecom / Tech
-  'FFGRP.AT','BELA.AT',                             // Food / Retail
+  // ── London Stock Exchange (LSE) ───────────────────────────────────
+  'HSBA.L','BP.L','SHEL.L','AZN.L','ULVR.L','GSK.L','RIO.L','BHP.L',
+  'VOD.L','LGEN.L','LLOY.L','BARC.L','NWG.L','REL.L','DGE.L',
+  'IAG.L','BA.L','RR.L','PRU.L','CPG.L',
+  // ── Frankfurt / XETRA (.DE) ────────────────────────────────────────
+  'SAP.DE','SIE.DE','ALV.DE','MRK.DE','BMW.DE','BAYN.DE',
+  'DTE.DE','VOW3.DE','BAS.DE','MUV2.DE','ADS.DE','DBK.DE','EOAN.DE',
+  // ── Paris (Euronext) (.PA) ─────────────────────────────────────────
+  'MC.PA','TTE.PA','SAN.PA','OR.PA','AI.PA','BNP.PA',
+  'ACA.PA','DG.PA','RI.PA','KER.PA','ENGI.PA',
+  // ── Amsterdam (.AS) ────────────────────────────────────────────────
+  'ASML.AS','HEIA.AS','INGA.AS','PHIA.AS','REN.AS','WKL.AS',
+  // ── Milan (Borsa Italiana) (.MI) ───────────────────────────────────
+  'ENI.MI','ENEL.MI','ISP.MI','UCG.MI','STM.MI','LUX.MI',
+  // ── Madrid (BME) (.MC) ────────────────────────────────────────────
+  'ITX.MC','SAN.MC','BBVA.MC','IBE.MC','TEF.MC',
+  // ── Athens Stock Exchange (ATHEX) (.AT) ────────────────────────────
+  'ETE.AT','EUROB.AT','ALPHA.AT','TPEIR.AT','OPAP.AT','HTO.AT',
+  'MYTIL.AT','ELPE.AT','MOH.AT','ADMIE.AT','GEKTERNA.AT','PPC.AT',
+  'EXAE.AT','LAMDA.AT','TITC.AT','FFGRP.AT',
+  // ── Cyprus Stock Exchange (.CY) ────────────────────────────────────
+  'BOC.CY','LOGICOM.CY',
   // ETFs — Broad Market
   'SPY','QQQ','DIA','IWM','VTI','VOO',
   // ETFs — Sector
@@ -287,7 +299,84 @@ const fundamentals = {
   'INKAT.AT': { roe: 14.5, yield: 2.8, debt: 0.3, fcfMargin: 12.5, moat: 'IT Infrastructure', buffettScore: 68, country: 'Greece', sector: 'Technology' },
   // Food / Retail
   'FFGRP.AT': { roe: 22.5, yield: 4.5, debt: 0.5, fcfMargin: 8.5,  moat: 'Food/Retail Network', buffettScore: 75, country: 'Greece', sector: 'Consumer' },
-  'BELA.AT':  { roe: 18.5, yield: 3.8, debt: 0.4, fcfMargin: 10.5, moat: 'Supermarket Chain', buffettScore: 72, country: 'Greece', sector: 'Consumer' },
+  'BELA.AT':  { roe: 18.5, yield: 3.8, debt: 0.4, fcfMargin: 10.5, moat: 'Supermarket Chain', buffettScore: 72, exchange: 'ATHEX' },
+
+  // ── Cyprus Stock Exchange ────────────────────────────────────────
+  'BOC.CY':     { roe: 14.5, yield: 4.2, debt: 0, fcfMargin: 0,    moat: 'Banking Scale',       buffettScore: 65, exchange: 'CSE' },
+  'LOGICOM.CY': { roe: 18.5, yield: 3.5, debt: 0.3, fcfMargin: 12.5, moat: 'IT Distribution',  buffettScore: 68, exchange: 'CSE' },
+
+  // ── London Stock Exchange ────────────────────────────────────────
+  'HSBA.L':  { roe: 12.5, yield: 4.8, debt: 0, fcfMargin: 0,    moat: 'Global Banking',        buffettScore: 72, exchange: 'LSE' },
+  'BP.L':    { roe: 11.5, yield: 5.2, debt: 0.5, fcfMargin: 8.5,  moat: 'Energy Supermajor',  buffettScore: 68, exchange: 'LSE' },
+  'SHEL.L':  { roe: 14.5, yield: 4.2, debt: 0.4, fcfMargin: 10.5, moat: 'Energy Supermajor',  buffettScore: 72, exchange: 'LSE' },
+  'AZN.L':   { roe: 22.5, yield: 2.2, debt: 0.8, fcfMargin: 22.5, moat: 'Pharma/Oncology',    buffettScore: 85, exchange: 'LSE' },
+  'ULVR.L':  { roe: 38.5, yield: 3.5, debt: 1.5, fcfMargin: 14.5, moat: 'Consumer Brands',    buffettScore: 82, exchange: 'LSE' },
+  'GSK.L':   { roe: 28.5, yield: 3.8, debt: 1.2, fcfMargin: 18.5, moat: 'Pharma/Vaccines',    buffettScore: 78, exchange: 'LSE' },
+  'RIO.L':   { roe: 22.5, yield: 6.5, debt: 0.3, fcfMargin: 22.5, moat: 'Mining Scale',       buffettScore: 75, exchange: 'LSE' },
+  'BHP.L':   { roe: 25.5, yield: 5.8, debt: 0.3, fcfMargin: 24.5, moat: 'Mining Scale',       buffettScore: 78, exchange: 'LSE' },
+  'VOD.L':   { roe: 8.5,  yield: 8.5, debt: 1.8, fcfMargin: 12.5, moat: 'Telecom Network',   buffettScore: 58, exchange: 'LSE' },
+  'LGEN.L':  { roe: 14.5, yield: 8.2, debt: 0, fcfMargin: 0,    moat: 'Insurance/Annuities',  buffettScore: 70, exchange: 'LSE' },
+  'LLOY.L':  { roe: 12.5, yield: 5.5, debt: 0, fcfMargin: 0,    moat: 'UK Banking',            buffettScore: 65, exchange: 'LSE' },
+  'BARC.L':  { roe: 10.5, yield: 4.2, debt: 0, fcfMargin: 0,    moat: 'Banking Scale',         buffettScore: 62, exchange: 'LSE' },
+  'NWG.L':   { roe: 12.5, yield: 5.8, debt: 0, fcfMargin: 0,    moat: 'UK Banking',            buffettScore: 65, exchange: 'LSE' },
+  'REL.L':   { roe: 35.5, yield: 2.2, debt: 1.0, fcfMargin: 22.5, moat: 'Data/Analytics',     buffettScore: 85, exchange: 'LSE' },
+  'DGE.L':   { roe: 32.5, yield: 2.8, debt: 1.8, fcfMargin: 18.5, moat: 'Spirits Brand',      buffettScore: 80, exchange: 'LSE' },
+  'IAG.L':   { roe: 18.5, yield: 0,   debt: 2.2, fcfMargin: 8.5,  moat: 'Airline Scale',      buffettScore: 52, exchange: 'LSE' },
+  'BA.L':    { roe: 22.5, yield: 2.2, debt: 1.5, fcfMargin: 8.5,  moat: 'Defense/Aerospace',  buffettScore: 72, exchange: 'LSE' },
+  'RR.L':    { roe: 28.5, yield: 0.8, debt: 0.8, fcfMargin: 10.5, moat: 'Aerospace Engines',  buffettScore: 75, exchange: 'LSE' },
+  'PRU.L':   { roe: 14.5, yield: 2.5, debt: 0, fcfMargin: 0,    moat: 'Asia Insurance',        buffettScore: 70, exchange: 'LSE' },
+  'CPG.L':   { roe: 22.5, yield: 3.8, debt: 0.8, fcfMargin: 12.5, moat: 'Convenience Retail', buffettScore: 72, exchange: 'LSE' },
+
+  // ── Frankfurt / XETRA ───────────────────────────────────────────
+  'SAP.DE':  { roe: 18.5, yield: 1.2, debt: 0.3, fcfMargin: 22.5, moat: 'Enterprise Software', buffettScore: 88, exchange: 'XETRA' },
+  'SIE.DE':  { roe: 14.5, yield: 2.5, debt: 0.5, fcfMargin: 10.5, moat: 'Industrial Tech',     buffettScore: 78, exchange: 'XETRA' },
+  'ALV.DE':  { roe: 14.5, yield: 4.2, debt: 0, fcfMargin: 0,    moat: 'Global Insurance',      buffettScore: 78, exchange: 'XETRA' },
+  'MRK.DE':  { roe: 18.5, yield: 1.8, debt: 0.6, fcfMargin: 18.5, moat: 'Pharma/Life Science', buffettScore: 80, exchange: 'XETRA' },
+  'BMW.DE':  { roe: 12.5, yield: 5.8, debt: 1.2, fcfMargin: 5.5,  moat: 'Premium Auto Brand', buffettScore: 68, exchange: 'XETRA' },
+  'BAYN.DE': { roe: 8.5,  yield: 4.5, debt: 0.8, fcfMargin: 12.5, moat: 'Pharma/AgriScience',  buffettScore: 62, exchange: 'XETRA' },
+  'DTE.DE':  { roe: 12.5, yield: 3.2, debt: 1.8, fcfMargin: 14.5, moat: 'Telecom/T-Mobile',    buffettScore: 70, exchange: 'XETRA' },
+  'VOW3.DE': { roe: 8.5,  yield: 7.2, debt: 1.5, fcfMargin: 4.5,  moat: 'Auto Scale',          buffettScore: 58, exchange: 'XETRA' },
+  'BAS.DE':  { roe: 8.5,  yield: 5.8, debt: 0.6, fcfMargin: 8.5,  moat: 'Chemical Scale',      buffettScore: 62, exchange: 'XETRA' },
+  'MUV2.DE': { roe: 14.5, yield: 3.5, debt: 0, fcfMargin: 0,    moat: 'Reinsurance Leader',    buffettScore: 78, exchange: 'XETRA' },
+  'ADS.DE':  { roe: 14.5, yield: 1.5, debt: 0.4, fcfMargin: 8.5,  moat: 'Sports Brand',        buffettScore: 72, exchange: 'XETRA' },
+  'DBK.DE':  { roe: 8.5,  yield: 2.8, debt: 0, fcfMargin: 0,    moat: 'Banking Scale',         buffettScore: 58, exchange: 'XETRA' },
+  'EOAN.DE': { roe: 9.5,  yield: 4.8, debt: 1.5, fcfMargin: 0,    moat: 'Utility/Renewables',  buffettScore: 65, exchange: 'XETRA' },
+
+  // ── Paris (Euronext) ────────────────────────────────────────────
+  'MC.PA':   { roe: 18.5, yield: 1.8, debt: 0.3, fcfMargin: 18.5, moat: 'Luxury Brand Empire', buffettScore: 90, exchange: 'EPA' },
+  'TTE.PA':  { roe: 14.5, yield: 5.2, debt: 0.4, fcfMargin: 12.5, moat: 'Energy Supermajor',  buffettScore: 72, exchange: 'EPA' },
+  'SAN.PA':  { roe: 12.5, yield: 3.8, debt: 0.5, fcfMargin: 18.5, moat: 'Pharma/Vaccines',    buffettScore: 75, exchange: 'EPA' },
+  'OR.PA':   { roe: 22.5, yield: 1.8, debt: 0.2, fcfMargin: 18.5, moat: 'Beauty Brand Leader', buffettScore: 88, exchange: 'EPA' },
+  'AI.PA':   { roe: 14.5, yield: 2.2, debt: 0.4, fcfMargin: 10.5, moat: 'Industrial Gases',   buffettScore: 78, exchange: 'EPA' },
+  'BNP.PA':  { roe: 10.5, yield: 6.5, debt: 0, fcfMargin: 0,    moat: 'European Banking',     buffettScore: 68, exchange: 'EPA' },
+  'ACA.PA':  { roe: 9.5,  yield: 7.2, debt: 0, fcfMargin: 0,    moat: 'European Banking',     buffettScore: 65, exchange: 'EPA' },
+  'DG.PA':   { roe: 35.5, yield: 0.8, debt: 0.3, fcfMargin: 5.5,  moat: 'Grocery Retail',     buffettScore: 75, exchange: 'EPA' },
+  'RI.PA':   { roe: 14.5, yield: 2.5, debt: 0.6, fcfMargin: 14.5, moat: 'Spirits Brand',      buffettScore: 75, exchange: 'EPA' },
+  'KER.PA':  { roe: 18.5, yield: 2.2, debt: 0.2, fcfMargin: 14.5, moat: 'Luxury Brand',       buffettScore: 82, exchange: 'EPA' },
+  'ENGI.PA': { roe: 9.5,  yield: 5.5, debt: 1.2, fcfMargin: 0,    moat: 'Utility/Energy',     buffettScore: 62, exchange: 'EPA' },
+
+  // ── Amsterdam (Euronext) ────────────────────────────────────────
+  'ASML.AS': { roe: 55.5, yield: 0.8, debt: 0.3, fcfMargin: 28.5, moat: 'Semi Lithography Monopoly', buffettScore: 95, exchange: 'AMS' },
+  'HEIA.AS': { roe: 28.5, yield: 1.8, debt: 1.2, fcfMargin: 14.5, moat: 'Beer Brand Global',  buffettScore: 80, exchange: 'AMS' },
+  'INGA.AS': { roe: 12.5, yield: 5.8, debt: 0, fcfMargin: 0,    moat: 'Banking/Digital',       buffettScore: 68, exchange: 'AMS' },
+  'PHIA.AS': { roe: 8.5,  yield: 3.5, debt: 0.8, fcfMargin: 8.5,  moat: 'Healthcare Tech',    buffettScore: 65, exchange: 'AMS' },
+  'REN.AS':  { roe: 12.5, yield: 2.5, debt: 1.2, fcfMargin: 12.5, moat: 'Onshore Wind Energy', buffettScore: 65, exchange: 'AMS' },
+  'WKL.AS':  { roe: 28.5, yield: 2.5, debt: 0.8, fcfMargin: 18.5, moat: 'Info Services',      buffettScore: 80, exchange: 'AMS' },
+
+  // ── Milan (Borsa Italiana) ───────────────────────────────────────
+  'ENI.MI':  { roe: 12.5, yield: 6.5, debt: 0.4, fcfMargin: 10.5, moat: 'Energy Supermajor',  buffettScore: 70, exchange: 'BIT' },
+  'ENEL.MI': { roe: 9.5,  yield: 6.2, debt: 1.8, fcfMargin: 0,    moat: 'Utility Scale',      buffettScore: 62, exchange: 'BIT' },
+  'ISP.MI':  { roe: 14.5, yield: 8.5, debt: 0, fcfMargin: 0,    moat: 'Italian Banking',       buffettScore: 70, exchange: 'BIT' },
+  'UCG.MI':  { roe: 16.5, yield: 6.8, debt: 0, fcfMargin: 0,    moat: 'European Banking',      buffettScore: 72, exchange: 'BIT' },
+  'STM.MI':  { roe: 22.5, yield: 0.5, debt: 0.1, fcfMargin: 12.5, moat: 'Semiconductor',      buffettScore: 78, exchange: 'BIT' },
+  'LUX.MI':  { roe: 28.5, yield: 2.5, debt: 0.5, fcfMargin: 18.5, moat: 'Luxury Brand',       buffettScore: 82, exchange: 'BIT' },
+
+  // ── Madrid (BME) ────────────────────────────────────────────────
+  'ITX.MC':  { roe: 28.5, yield: 3.8, debt: 0, fcfMargin: 14.5, moat: 'Fast Fashion Scale',   buffettScore: 85, exchange: 'BME' },
+  'SAN.MC':  { roe: 10.5, yield: 4.5, debt: 0, fcfMargin: 0,    moat: 'Global Banking',        buffettScore: 65, exchange: 'BME' },
+  'BBVA.MC': { roe: 14.5, yield: 5.5, debt: 0, fcfMargin: 0,    moat: 'EM Banking Leader',    buffettScore: 70, exchange: 'BME' },
+  'IBE.MC':  { roe: 9.5,  yield: 4.8, debt: 1.5, fcfMargin: 0,   moat: 'Utility/Renewables',  buffettScore: 62, exchange: 'BME' },
+  'TEF.MC':  { roe: 12.5, yield: 7.2, debt: 2.2, fcfMargin: 10.5, moat: 'Telecom Network',    buffettScore: 58, exchange: 'BME' },
 
   // ── ETFs ─────────────────────────────────────────────────────────
   // For ETFs: roe = 10yr annualised return, fcfMargin = cost efficiency (100 - expense%), debt = 0
@@ -596,7 +685,6 @@ app.post('/api/screen', async (req, res) => {
       switch (strategy) {
         case 'dividend': include = f.yield > 1.5; break;
         case 'growth':   include = f.roe > 10; break;
-        case 'greek':    include = false; break; // no ETFs on ATHEX
         case 'all':      include = true; break;
         default:         include = f.buffettScore >= 60;
       }
@@ -619,9 +707,6 @@ app.post('/api/screen', async (req, res) => {
           break;
         case 'growth':
           include = f.roe > 25 && (isFinancial || f.fcfMargin > 20);
-          break;
-        case 'greek':
-          include = t.endsWith('.AT'); // Athens Stock Exchange only
           break;
         case 'all':
           include = true;
@@ -659,7 +744,8 @@ app.post('/api/screen', async (req, res) => {
       isETF: isETF,
       etfCategory: f.category || null,
       expenseRatio: f.expenseRatio || null,
-      holdings: f.holdings || null
+      holdings: f.holdings || null,
+      exchange: f.exchange || (t.includes('.') && !isETF ? t.split('.').pop() : 'US')
     });
 
     await new Promise(r => setTimeout(r, 80));
