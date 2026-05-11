@@ -345,11 +345,40 @@
     btn.classList.add('active');
   }
 
+  // Preset filter values per strategy
+  const stratPresets = {
+    buffett:  { maxPe: 30, minRoe: 15, minFcfMargin: 10, minDividend: 0,   maxDebt: 2.0, minBuffettScore: 0,  maxPrice: 2000 },
+    munger:   { maxPe: 40, minRoe: 20, minFcfMargin: 15, minDividend: 0,   maxDebt: 1.5, minBuffettScore: 0,  maxPrice: 2000 },
+    lynch:    { maxPe: 20, minRoe: 10, minFcfMargin: 0,  minDividend: 0,   maxDebt: 3.0, minBuffettScore: 0,  maxPrice: 2000 },
+    graham:   { maxPe: 15, minRoe: 0,  minFcfMargin: 0,  minDividend: 2.0, maxDebt: 1.0, minBuffettScore: 0,  maxPrice: 2000 },
+    dividend: { maxPe: 25, minRoe: 10, minFcfMargin: 0,  minDividend: 2.5, maxDebt: 2.0, minBuffettScore: 0,  maxPrice: 2000 },
+    growth:   { maxPe: 60, minRoe: 25, minFcfMargin: 20, minDividend: 0,   maxDebt: 1.0, minBuffettScore: 0,  maxPrice: 2000 },
+    all:      { maxPe: 100,minRoe: 0,  minFcfMargin: 0,  minDividend: 0,   maxDebt: 10,  minBuffettScore: 0,  maxPrice: 2000 },
+  };
+
+  function setSlider(id, val, displayId, formatter) {
+    const el = document.getElementById(id);
+    el.value = val;
+    document.getElementById(displayId).textContent = formatter(val);
+  }
+
+  function applyPreset(s) {
+    const p = stratPresets[s];
+    setSlider('maxPe',          p.maxPe,          'peVal',      v => v);
+    setSlider('minRoe',         p.minRoe,          'roeVal',     v => v + '%');
+    setSlider('minFcfMargin',   p.minFcfMargin,    'fcfVal',     v => v + '%');
+    setSlider('minDividend',    p.minDividend,     'divVal',     v => v + '%');
+    setSlider('maxDebt',        p.maxDebt,         'debtVal',    v => v);
+    setSlider('minBuffettScore',p.minBuffettScore, 'bscoreVal',  v => v);
+    setSlider('maxPrice',       p.maxPrice,        'priceVal',   v => v >= 2000 ? 'Any' : '$' + v);
+  }
+
   function setStrategy(s, btn) {
     currentStrategy = s;
     document.querySelectorAll('.strat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('stratDesc').textContent = stratDescs[s];
+    applyPreset(s);
   }
 
   async function runScan() {
