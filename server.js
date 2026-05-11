@@ -306,10 +306,28 @@ async function fetchYahooData(ticker) {
     const data = await res.json();
     const meta = data?.chart?.result?.[0]?.meta;
     if (!meta?.regularMarketPrice) return null;
+
+    // trailingPE often missing from chart endpoint — try quoteSummary as fallback
+    let pe = meta.trailingPE || null;
+    if (!pe) {
+      try {
+        const sr = await fetch(
+          `https://query1.finance.yahoo.com/v11/finance/quoteSummary/${ticker}?modules=defaultKeyStatistics`,
+          { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
+        );
+        if (sr.ok) {
+          const sd = await sr.json();
+          const stats = sd?.quoteSummary?.result?.[0]?.defaultKeyStatistics;
+          pe = stats?.trailingPE?.raw || stats?.forwardPE?.raw || null;
+        }
+      } catch(e) { /* ignore PE lookup failure */ }
+    }
+
+    console.log(`${ticker}: $${meta.regularMarketPrice} | PE: ${pe || 'N/A'}`);
     return {
       price: meta.regularMarketPrice,
       change: meta.regularMarketChangePercent || 0,
-      pe: meta.trailingPE || null,
+      pe,
       name: meta.longName || meta.shortName || ticker,
       marketCap: meta.marketCap || null
     };
@@ -410,15 +428,16 @@ function calcOracleScore(f, pe, changePercent, isETF) {
       'Surgical Robots','Cystic Fibrosis','Creative Software','Analog Chips',
       'Semi Inspection','Workflow SaaS','Heart Valves','Biotech',
       'Membership Retail','Railroad','Industrial Gas','Asset Mgmt Scale',
-      'Chips/AI','E-comm/Cloud','Mobile Chips','Chips/Software','Enterprise DB'
+      'Chips/AI','E-comm/Cloud','Mobile Chips','Chips/Software','Enterprise DB',
+      'Brand/Distribution','Coffee Brand','Chocolate Brand','Tissue Brands',
+      'Food Brands','Cereal Brands','Snack Brands','Soup Brand','Meat Brands',
+      'Paint Brand','Specialty Chemicals','Coatings','Defense','Aerospace',
+      'Medical Devices','Diagnostics','Lab Equipment','Pharma/IP','Pharma',
+      'Home Improvement','Cell Towers','Logistics REIT','Networking','Cable'
     ];
-    const goodMoats = ['Networking','CRM Platform','Pharmacy Chains','Streaming Content',
-      'Industrial Gas','Railroad','Logistics REIT','Cell Towers','Home Improvement',
-      'Membership Retail','Coffee Brand','Chocolate Brand'];
     if (f.moat && f.moat !== 'Unknown') {
       if (strongMoats.includes(f.moat))  quality += 10;
-      else if (goodMoats.includes(f.moat)) quality += 7;
-      else                                quality += 5;
+      else                               quality += 6;
     }
     breakdown.quality = { score: quality, max: 30, label: `ROE ${roe}% · FCF ${fcf}%` };
 
@@ -442,11 +461,12 @@ function calcOracleScore(f, pe, changePercent, isETF) {
       safety = 14; // banks use leverage by design — neutral
     } else {
       if (debt <= 0.25)     safety = 20;
-      else if (debt <= 0.5) safety = 17;
-      else if (debt <= 1.0) safety = 13;
-      else if (debt <= 2.0) safety = 8;
-      else if (debt <= 3.0) safety = 4;
-      else                  safety = 0;
+      else if (debt <= 0.5) safety = 18;
+      else if (debt <= 1.0) safety = 14;
+      else if (debt <= 1.5) safety = 11;
+      else if (debt <= 2.0) safety = 9;  // KO, MCD — strong brands carry modest debt safely
+      else if (debt <= 3.0) safety = 5;
+      else                  safety = 1;
     }
     breakdown.safety = { score: safety, max: 20, label: isFinancial ? 'Financial co. (leverage normal)' : `Debt/Equity ${debt}` };
 

@@ -999,18 +999,21 @@
     document.getElementById('verdictFill').style.background = vc;
 
     const bd = stock.oracleBreakdown || {};
+    // breakdown values are {score,max,label} objects — extract .score and .label
+    const bscore = (k) => { const v = bd[k]; return v === undefined ? undefined : (typeof v === 'object' ? v.score : v); };
+    const blabel = (k) => { const v = bd[k]; return v && typeof v === 'object' ? v.label : ''; };
     const pts = [];
     if (stock.isETF) {
-      if (bd.cost !== undefined)  pts.push({ ok: bd.cost >= 25,  text: `Cost Efficiency: ${bd.cost}/35 pts — Expense ratio ${stock.expenseRatio}%` });
-      if (bd.ret !== undefined)   pts.push({ ok: bd.ret >= 18,   text: `Return Quality: ${bd.ret}/30 pts — ${stock.roe}% 10-year annualised return` });
-      if (bd.div !== undefined)   pts.push({ ok: bd.div >= 14,   text: `Diversification: ${bd.div}/20 pts — ${stock.holdings ? stock.holdings.toLocaleString() : '?'} holdings` });
-      if (bd.inc !== undefined)   pts.push({ ok: bd.inc >= 8,    text: `Income: ${bd.inc}/15 pts — ${stock.dividendYield}% yield` });
+      const cs=bscore('costEfficiency'); if(cs!==undefined) pts.push({ok:cs>=25, text:`Cost Efficiency: ${cs}/35 pts — ${blabel('costEfficiency')}`});
+      const rs=bscore('returnQuality');  if(rs!==undefined) pts.push({ok:rs>=18, text:`Return Quality: ${rs}/30 pts — ${blabel('returnQuality')}`});
+      const ds=bscore('diversification');if(ds!==undefined) pts.push({ok:ds>=14, text:`Diversification: ${ds}/20 pts — ${blabel('diversification')}`});
+      const is=bscore('income');         if(is!==undefined) pts.push({ok:is>=8,  text:`Income: ${is}/15 pts — ${blabel('income')}`});
     } else {
-      if (bd.quality !== undefined)  pts.push({ ok: bd.quality >= 20, text: `Quality: ${bd.quality}/30 pts — ROE ${stock.roe}%, FCF ${stock.fcfMargin}%, Moat: ${stock.moat || 'None'}` });
-      if (bd.value !== undefined)    pts.push({ ok: bd.value >= 14,   text: `Value: ${bd.value}/25 pts — P/E ${stock.peRatio || 'unknown'}` });
-      if (bd.safety !== undefined)   pts.push({ ok: bd.safety >= 13,  text: `Safety: ${bd.safety}/20 pts — Debt/Equity ${stock.debtToEquity}` });
-      if (bd.income !== undefined)   pts.push({ ok: bd.income >= 8,   text: `Income: ${bd.income}/15 pts — ${stock.dividendYield}% yield` });
-      if (bd.momentum !== undefined) pts.push({ ok: bd.momentum >= 6, text: `Momentum: ${bd.momentum}/10 pts — ${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent}% today` });
+      const qs=bscore('quality');  if(qs!==undefined) pts.push({ok:qs>=20, text:`Quality: ${qs}/30 pts — ROE ${stock.roe}%, FCF ${stock.fcfMargin}%, Moat: ${stock.moat||'None'}`});
+      const vs=bscore('value');    if(vs!==undefined) pts.push({ok:vs>=14, text:`Value: ${vs}/25 pts — ${blabel('value')}`});
+      const ss=bscore('safety');   if(ss!==undefined) pts.push({ok:ss>=13, text:`Safety: ${ss}/20 pts — ${blabel('safety')}`});
+      const ins=bscore('income');  if(ins!==undefined) pts.push({ok:ins>=8, text:`Income: ${ins}/15 pts — ${stock.dividendYield}% yield`});
+      const ms=bscore('momentum'); if(ms!==undefined) pts.push({ok:ms>=6,  text:`Momentum: ${ms}/10 pts — ${blabel('momentum')}`});
     }
     document.getElementById('verdictPoints').innerHTML = pts.map(p =>
       `<div class="verdict-point"><span class="icon">${p.ok ? '✅' : '⚠️'}</span><span style="color:${p.ok ? 'var(--text)' : 'var(--muted)'}">${p.text}</span></div>`
