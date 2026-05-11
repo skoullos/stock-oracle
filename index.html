@@ -3,372 +3,479 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Oracle - Global Investment Screener</title>
+  <title>Stock Oracle — Buffett-Style Screener</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --bg-dark: #09090b;
-      --bg-panel: #0f0f11;
-      --bg-card: #131316;
-      --border: #27272a;
-      --accent: #d4a853;
-      --accent-light: #edc97a;
-      --text: #f4f0e8;
-      --text-muted: #71717a;
-      --success: #4ade80;
-      --warning: #fbbf24;
-      --danger: #f87171;
-      --gold: #7a5f2a;
+      --bg: #09090b; --panel: #0f0f11; --card: #131316;
+      --border: #27272a; --accent: #d4a853; --accent2: #edc97a;
+      --text: #f4f0e8; --muted: #71717a; --green: #4ade80;
+      --yellow: #fbbf24; --red: #f87171; --gold: #7a5f2a;
     }
-    body {
-      font-family: Georgia, 'Times New Roman', serif;
-      background: var(--bg-dark);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    .header {
-      border-bottom: 1px solid var(--border);
-      padding: 15px 26px;
-      background: var(--bg-panel);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    body { font-family: Georgia, serif; background: var(--bg); color: var(--text); }
+
+    /* HEADER */
+    .header { border-bottom: 1px solid var(--border); padding: 14px 24px; background: var(--panel); display: flex; justify-content: space-between; align-items: center; }
     .header-left { display: flex; align-items: baseline; gap: 10px; }
-    .header-left span { font-size: 9px; color: var(--gold); letter-spacing: 0.35em; text-transform: uppercase; }
-    .header-left h1 { margin: 0; font-size: 18px; font-weight: 700; color: var(--accent-light); }
-    .header-right { font-size: 9px; color: var(--text-muted); }
-    .header-right.live { color: var(--success); }
+    .header-left small { font-size: 9px; color: var(--gold); letter-spacing: 0.35em; text-transform: uppercase; }
+    .header-left h1 { font-size: 18px; color: var(--accent2); }
+    .api-status { font-size: 9px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
+    .api-status.live { border-color: var(--green); color: var(--green); }
+
     .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .tab-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 10px 18px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-weight: 700; }
-    .tab-btn.active { background: var(--gold); border-color: var(--accent); color: var(--accent-light); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
-    .panel-title { font-size: 10px; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; margin-bottom: 12px; font-weight: 700; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-    label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: var(--text-muted); }
-    label strong { color: var(--accent-light); }
+
+    /* TABS */
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 9px 18px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-weight: 700; font-size: 12px; }
+    .tab-btn.active { background: var(--gold); border-color: var(--accent); color: var(--accent2); }
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* PANELS */
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+    .panel-title { font-size: 10px; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; font-weight: 700; }
+
+    /* STRATEGY PILLS */
+    .strategy-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+    .strat-btn { border: 1px solid var(--border); background: var(--card); color: var(--muted); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-size: 11px; transition: all 0.2s; }
+    .strat-btn:hover { border-color: var(--accent); color: var(--accent2); }
+    .strat-btn.active { background: var(--gold); border-color: var(--accent); color: var(--accent2); }
+    .strat-desc { font-size: 10px; color: var(--muted); margin-top: 8px; padding: 8px 12px; background: var(--card); border-radius: 6px; border-left: 2px solid var(--accent); }
+
+    /* FILTERS */
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+    .filter-item label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .filter-item label strong { color: var(--accent2); }
     input[type="range"] { width: 100%; accent-color: var(--accent); }
-    input, select { background: var(--bg-dark); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-family: Georgia; width: 100%; }
-    button { background: var(--gold); border: 1px solid var(--accent); color: var(--accent-light); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-weight: 700; font-size: 12px; }
-    button:hover { opacity: 0.85; }
-    button:disabled { opacity: 0.5; }
-    .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-    .stock-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; }
-    .stock-card:hover { transform: translateY(-2px); border-color: var(--accent); }
-    .stock-ticker { font-size: 14px; font-weight: 700; color: var(--accent-light); margin-bottom: 2px; }
-    .stock-company { font-size: 8px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.3; min-height: 16px; }
-    .stock-price { font-size: 13px; font-weight: 700; margin: 3px 0; }
-    .stock-metric { font-size: 8px; color: var(--text-muted); margin: 2px 0; }
-    .results { background: var(--bg-panel); border: 1px solid var(--success); border-radius: 12px; padding: 18px; display: none; }
-    .results.show { display: block; }
-    .results-title { font-size: 10px; letter-spacing: 0.2em; color: var(--success); text-transform: uppercase; margin-bottom: 12px; font-weight: 700; }
-    .sort-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .sort-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 10px; }
-    .stats-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 9px; margin-bottom: 14px; }
-    .stats-box strong { color: var(--accent-light); }
-    .info-message { background: rgba(74, 222, 128, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
-    .info-message.show { display: block; }
-    .warning-message { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--warning); color: var(--warning); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
-    .warning-message.show { display: block; }
-    .footer { margin-top: 20px; font-size: 9px; color: var(--text-muted); text-align: center; padding-top: 12px; }
+    .filter-hint { font-size: 9px; color: var(--muted); margin-top: 3px; }
+
+    /* SCAN BUTTON */
+    .scan-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .scan-btn { background: var(--accent); border: none; color: #000; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-weight: 700; font-size: 13px; }
+    .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .scan-status { font-size: 11px; color: var(--muted); }
+
+    /* RESULTS */
+    .results-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .results-count { font-size: 13px; color: var(--green); font-weight: 700; }
+    .export-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .export-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 7px 14px; border-radius: 6px; cursor: pointer; font-family: Georgia; font-size: 11px; }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+    /* SORT */
+    .sort-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .sort-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 5px 11px; border-radius: 6px; cursor: pointer; font-size: 10px; font-family: Georgia; }
+    .sort-btn.active { border-color: var(--accent); color: var(--accent2); }
+
+    /* STOCK GRID */
+    .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .stock-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; position: relative; }
+    .stock-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .card-ticker { font-size: 15px; font-weight: 700; color: var(--accent2); }
+    .card-score { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+    .score-high { background: rgba(74,222,128,0.15); color: var(--green); }
+    .score-mid { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .score-low { background: rgba(248,113,113,0.15); color: var(--red); }
+    .card-name { font-size: 9px; color: var(--muted); margin-bottom: 10px; line-height: 1.3; }
+    .card-price { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .card-change { font-size: 9px; }
+    .card-change.pos { color: var(--green); }
+    .card-change.neg { color: var(--red); }
+    .card-kpis { border-top: 1px solid var(--border); padding-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .kpi { font-size: 9px; color: var(--muted); }
+    .kpi strong { color: var(--accent2); display: block; font-size: 10px; }
+    .moat-tag { font-size: 8px; color: var(--gold); background: rgba(212,168,83,0.1); border: 1px solid rgba(212,168,83,0.2); padding: 2px 7px; border-radius: 10px; margin-top: 8px; display: inline-block; }
+    .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 4px; }
+    .demo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); display: inline-block; margin-right: 4px; }
+
+    /* STATS BAR */
+    .stats-bar { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 9px; color: var(--muted); display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
+    .stats-bar strong { color: var(--accent2); }
+
+    /* INVESTOR LEGEND */
+    .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .legend-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .legend-name { font-size: 11px; font-weight: 700; color: var(--accent2); margin-bottom: 4px; }
+    .legend-desc { font-size: 9px; color: var(--muted); line-height: 1.5; }
+
+    .footer { margin-top: 30px; text-align: center; font-size: 9px; color: var(--muted); padding-top: 12px; border-top: 1px solid var(--border); }
+    .progress-bar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
+    .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-left">
-      <span>Berkshire</span>
-      <h1>Stock Oracle</h1>
-    </div>
-    <div class="header-right" id="apiStatus">Connecting to FMP...</div>
+<div class="header">
+  <div class="header-left">
+    <small>Berkshire</small>
+    <h1>Stock Oracle</h1>
+  </div>
+  <div class="api-status" id="apiStatus">Connecting...</div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('screener',this)">🔍 Screener</button>
+    <button class="tab-btn" onclick="showTab('results',this)">📊 Results</button>
+    <button class="tab-btn" onclick="showTab('legend',this)">📖 Investor Guide</button>
   </div>
 
-  <div class="container">
-    <div class="warning-message" id="warningMessage"></div>
-    <div class="info-message" id="infoMessage"></div>
+  <!-- SCREENER TAB -->
+  <div id="screener" class="tab active">
 
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('screener', this)">🔍 Screener</button>
-      <button class="tab-btn" onclick="switchTab('results', this)">📊 Results</button>
+    <!-- STRATEGY -->
+    <div class="panel">
+      <div class="panel-title">Investor Strategy</div>
+      <div class="strategy-grid">
+        <button class="strat-btn active" onclick="setStrategy('buffett',this)">🎩 Warren Buffett</button>
+        <button class="strat-btn" onclick="setStrategy('munger',this)">🧠 Charlie Munger</button>
+        <button class="strat-btn" onclick="setStrategy('lynch',this)">📈 Peter Lynch</button>
+        <button class="strat-btn" onclick="setStrategy('graham',this)">📐 Ben Graham</button>
+        <button class="strat-btn" onclick="setStrategy('dividend',this)">💰 Dividend Income</button>
+        <button class="strat-btn" onclick="setStrategy('growth',this)">🚀 High Growth</button>
+        <button class="strat-btn" onclick="setStrategy('all',this)">🌍 Show All</button>
+      </div>
+      <div class="strat-desc" id="stratDesc">ROE &gt; 15% · FCF Margin &gt; 10% · P/E &lt; 30 · Debt/Equity &lt; 2 — Companies with durable competitive advantage and consistent earnings</div>
     </div>
 
-    <!-- SCREENER -->
-    <div id="screener" class="tab-content active">
-      <div class="panel">
-        <div class="panel-title">Filters</div>
-        <div class="grid-3">
-          <div>
-            <label><span>Max P/E</span><strong id="peVal">20</strong></label>
-            <input type="range" id="pe" min="5" max="100" value="20" onchange="updateLabel('pe')">
-          </div>
-          <div>
-            <label><span>Max Price ($)</span><strong id="priceVal">500</strong></label>
-            <input type="range" id="price" min="10" max="2000" value="500" step="10" onchange="updateLabel('price')">
-          </div>
-          <div>
-            <label><span>Min Dividend %</span><strong id="divVal">0</strong></label>
-            <input type="range" id="dividend" min="0" max="15" value="0" step="0.5" onchange="updateLabel('dividend')">
-          </div>
-          <div>
-            <label><span>Max Debt/Equity</span><strong id="debtVal">3</strong></label>
-            <input type="range" id="debt" min="0" max="5" value="3" step="0.5" onchange="updateLabel('debt')">
-          </div>
+    <!-- FILTERS -->
+    <div class="panel">
+      <div class="panel-title">Fine-Tune Filters</div>
+      <div class="filter-grid">
+
+        <div class="filter-item">
+          <label>Max P/E Ratio <strong id="peVal">30</strong></label>
+          <input type="range" id="maxPe" min="5" max="100" value="30" step="1" oninput="document.getElementById('peVal').textContent=this.value">
+          <div class="filter-hint">Buffett: prefers under 25 · Graham: under 15</div>
         </div>
-      </div>
 
-      <div class="panel">
-        <div class="panel-title">Strategy</div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-          <button onclick="selectStrategy('growth', this)" class="tab-btn active">📈 Growth</button>
-          <button onclick="selectStrategy('dividend', this)" class="tab-btn">💰 Dividend</button>
-          <button onclick="selectStrategy('balanced', this)" class="tab-btn">⚖️ Balanced</button>
-          <button onclick="selectStrategy('value', this)" class="tab-btn">🎯 Value</button>
+        <div class="filter-item">
+          <label>Min ROE % <strong id="roeVal">15%</strong></label>
+          <input type="range" id="minRoe" min="0" max="50" value="15" step="1" oninput="document.getElementById('roeVal').textContent=this.value+'%'">
+          <div class="filter-hint">Buffett: wants 15%+ consistently</div>
         </div>
-      </div>
 
-      <div style="display: flex; gap: 12px; margin-bottom: 14px;">
-        <button id="scanBtn" onclick="startScan()" style="flex: 1;">🚀 SCAN</button>
-      </div>
+        <div class="filter-item">
+          <label>Min FCF Margin % <strong id="fcfVal">10%</strong></label>
+          <input type="range" id="minFcfMargin" min="0" max="50" value="10" step="1" oninput="document.getElementById('fcfVal').textContent=this.value+'%'">
+          <div class="filter-hint">Key Buffett metric: cash generation power</div>
+        </div>
 
-      <div id="scanStatus" style="font-size: 11px; color: var(--text-muted);">Ready to scan. Connecting to FMP API for live data...</div>
+        <div class="filter-item">
+          <label>Min Dividend Yield % <strong id="divVal">0%</strong></label>
+          <input type="range" id="minDividend" min="0" max="10" value="0" step="0.5" oninput="document.getElementById('divVal').textContent=this.value+'%'">
+          <div class="filter-hint">Graham: prefers 2%+ · Dividend strategy: 3%+</div>
+        </div>
+
+        <div class="filter-item">
+          <label>Max Debt/Equity <strong id="debtVal">2.0</strong></label>
+          <input type="range" id="maxDebt" min="0" max="10" value="2" step="0.5" oninput="document.getElementById('debtVal').textContent=this.value">
+          <div class="filter-hint">Buffett: avoids high debt companies</div>
+        </div>
+
+        <div class="filter-item">
+          <label>Max Stock Price $ <strong id="priceVal">Any</strong></label>
+          <input type="range" id="maxPrice" min="0" max="2000" value="2000" step="50" oninput="document.getElementById('priceVal').textContent=this.value>=2000?'Any':'$'+this.value">
+          <div class="filter-hint">Price does not affect quality — filter by budget</div>
+        </div>
+
+        <div class="filter-item">
+          <label>Min Buffett Score <strong id="bscoreVal">0</strong></label>
+          <input type="range" id="minBuffettScore" min="0" max="95" value="0" step="5" oninput="document.getElementById('bscoreVal').textContent=this.value">
+          <div class="filter-hint">Composite quality score (0–100)</div>
+        </div>
+
+      </div>
     </div>
 
-    <!-- RESULTS -->
-    <div id="results" class="tab-content">
-      <div class="panel">
-        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-          <button onclick="exportHTML()" style="background: var(--success); border-color: var(--success);">📄 Export HTML</button>
-          <button onclick="exportCSV()" style="background: var(--warning); border-color: var(--warning); color: #000;">📊 Export CSV</button>
-          <button onclick="printPage()" style="background: none; border: 1px solid var(--border); color: var(--text);">🖨️ Print</button>
+    <!-- SCAN -->
+    <div class="panel">
+      <div class="scan-row">
+        <button class="scan-btn" id="scanBtn" onclick="runScan()">⚡ Scan 200 Stocks</button>
+        <span class="scan-status" id="scanStatus">Ready — using Yahoo Finance live prices</span>
+      </div>
+      <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+  </div>
+
+  <!-- RESULTS TAB -->
+  <div id="results" class="tab">
+    <div class="results-header">
+      <div class="results-count" id="resultsCount">Run a scan to see results</div>
+      <div class="export-row">
+        <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="export-btn" onclick="window.print()">🖨 Print</button>
+      </div>
+    </div>
+
+    <div class="stats-bar" id="statsBar" style="display:none">
+      Mode: <strong id="modeLabel">—</strong> &nbsp;|&nbsp;
+      Live Prices: <strong id="liveCount">—</strong> &nbsp;|&nbsp;
+      Universe: <strong id="universeCount">—</strong> stocks scanned &nbsp;|&nbsp;
+      Matches: <strong id="matchCount">—</strong> &nbsp;|&nbsp;
+      Strategy: <strong id="stratLabel">—</strong>
+    </div>
+
+    <div class="sort-row">
+      <span style="font-size:10px;color:var(--muted);margin-right:4px">Sort:</span>
+      <button class="sort-btn active" onclick="sortResults('buffettScore',this)">⭐ Buffett Score</button>
+      <button class="sort-btn" onclick="sortResults('price',this)">💵 Price</button>
+      <button class="sort-btn" onclick="sortResults('peRatio',this)">📊 P/E</button>
+      <button class="sort-btn" onclick="sortResults('dividendYield',this)">💰 Yield</button>
+      <button class="sort-btn" onclick="sortResults('roe',this)">📈 ROE</button>
+      <button class="sort-btn" onclick="sortResults('fcfMargin',this)">💸 FCF</button>
+    </div>
+
+    <div class="stock-grid" id="stockGrid">
+      <div style="color:var(--muted);font-size:12px;padding:20px">Run a scan first → click "⚡ Scan 200 Stocks"</div>
+    </div>
+  </div>
+
+  <!-- LEGEND TAB -->
+  <div id="legend" class="tab">
+    <div class="panel">
+      <div class="panel-title">Investor Philosophies</div>
+      <div class="legend">
+        <div class="legend-card">
+          <div class="legend-name">🎩 Warren Buffett</div>
+          <div class="legend-desc">
+            Seeks companies with <em>durable competitive advantages</em> (moats), consistent high ROE (&gt;15%), low debt, and strong free cash flow. Buys at fair prices and holds forever.<br><br>
+            <strong style="color:var(--accent2)">Key metrics:</strong> ROE &gt;15% · FCF Margin &gt;10% · P/E &lt;30 · D/E &lt;2
+          </div>
         </div>
-        <div class="sort-controls">
-          <button class="sort-btn" onclick="sortResults('price', 'asc')">💰 Price ↑</button>
-          <button class="sort-btn" onclick="sortResults('peRatio', 'asc')">📊 P/E ↑</button>
-          <button class="sort-btn" onclick="sortResults('dividendYield', 'desc')">💵 Yield ↓</button>
-          <button class="sort-btn" onclick="sortResults('roe', 'desc')">📈 ROE ↓</button>
+        <div class="legend-card">
+          <div class="legend-name">🧠 Charlie Munger</div>
+          <div class="legend-desc">
+            Focuses on <em>quality businesses</em> with strong moats, pricing power, and high returns on capital. Willing to pay up for truly exceptional businesses.<br><br>
+            <strong style="color:var(--accent2)">Key metrics:</strong> ROE &gt;20% · FCF Margin &gt;15% · Clear moat
+          </div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">📈 Peter Lynch</div>
+          <div class="legend-desc">
+            Famous for <em>"invest in what you know"</em>. Looks for undervalued growth stocks with P/E below 20. Loved small and mid-cap companies others overlooked.<br><br>
+            <strong style="color:var(--accent2)">Key metrics:</strong> P/E &lt;20 · ROE &gt;10% · PEG ratio &lt;1
+          </div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">📐 Benjamin Graham</div>
+          <div class="legend-desc">
+            The <em>"father of value investing"</em>. Sought stocks trading at a margin of safety below intrinsic value. Strict criteria: low P/E, dividend yield, strong balance sheet.<br><br>
+            <strong style="color:var(--accent2)">Key metrics:</strong> P/E &lt;15 · Dividend &gt;2% · D/E &lt;1
+          </div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">💰 Dividend Income</div>
+          <div class="legend-desc">
+            Focus on companies with <em>strong, growing dividends</em>. Ideal for income investors seeking passive cash flow. Prioritises yield, payout sustainability, and stability.<br><br>
+            <strong style="color:var(--accent2)">Key metrics:</strong> Yield &gt;2.5% · ROE &gt;10% · Stable cash flows
+          </div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">🚀 High Growth</div>
+          <div class="legend-desc">
+            Targets companies with <em>exceptional return on equity</em> and strong free cash flow generation. Often technology and platform businesses compounding rapidly.<br><br>
+            <strong style="color:var(--accent2)">Key metrics:</strong> ROE &gt;25% · FCF Margin &gt;20%
+          </div>
         </div>
       </div>
+    </div>
 
-      <div class="results" id="resultsPanel">
-        <div class="results-title">⭐ <span id="resultCount">0</span> Assets Found</div>
-        <div class="stock-grid" id="stockGrid"></div>
-      </div>
-
-      <div class="stats-box" id="statsBox" style="display: none;">
-        <strong>Mode:</strong> <span id="mode">—</span> | 
-        <strong>Cache Efficiency:</strong> <span id="efficiency">0</span>% | 
-        <strong>API Calls:</strong> <span id="apiCalls">0</span> | 
-        <strong>Updated:</strong> <span id="lastUpdate">—</span>
+    <div class="panel">
+      <div class="panel-title">KPI Glossary</div>
+      <div class="legend">
+        <div class="legend-card">
+          <div class="legend-name">ROE — Return on Equity</div>
+          <div class="legend-desc">How much profit a company generates per dollar of shareholder equity. Buffett wants 15%+ consistently. High ROE = efficient use of capital.</div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">FCF Margin — Free Cash Flow Margin</div>
+          <div class="legend-desc">Percentage of revenue left as free cash after capital expenditure. Buffett loves cash-generating businesses. 15%+ is excellent.</div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">P/E — Price to Earnings</div>
+          <div class="legend-desc">How many years of earnings you pay for the stock. Graham wanted under 15. Buffett accepts up to 25-30 for quality businesses.</div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">Debt/Equity Ratio</div>
+          <div class="legend-desc">Company debt relative to equity. Buffett avoids over-leveraged businesses. Under 1.0 is conservative, under 2.0 is acceptable.</div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">Dividend Yield</div>
+          <div class="legend-desc">Annual dividend as % of stock price. Graham required dividends. Income investors target 3%+. High yield can signal distress — check sustainability.</div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">Economic Moat</div>
+          <div class="legend-desc">Buffett's term for durable competitive advantage — what protects a business from competition. Brand, network effects, switching costs, cost advantages.</div>
+        </div>
+        <div class="legend-card">
+          <div class="legend-name">Buffett Score (0–100)</div>
+          <div class="legend-desc">Our composite quality score combining ROE, FCF margin, P/E, debt, and dividend yield — weighted as Buffett would. 80+ is exceptional quality.</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="footer">
-    ⚠ Educational only · Not financial advice · © 2025 Stock Oracle
-  </div>
+  <div class="footer">Stock Oracle · Prices via Yahoo Finance · Fundamentals updated quarterly · Not financial advice</div>
+</div>
 
-  <script>
-    const API_BASE = window.location.origin;
-    let currentStrategy = 'growth';
-    let allResults = [];
-    let isScanning = false;
-    let apiMode = 'unknown';
+<script>
+  const API = '';
+  let allResults = [];
+  let currentStrategy = 'buffett';
+  let currentSort = 'buffettScore';
 
-    function switchTab(tab, btn) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-      document.getElementById(tab).classList.add('active');
-      btn.classList.add('active');
+  const stratDescs = {
+    buffett: 'ROE > 15% · FCF Margin > 10% · P/E < 30 · Debt/Equity < 2 — Companies with durable competitive advantage and consistent earnings',
+    munger: 'ROE > 20% · FCF Margin > 15% · Must have identifiable moat — Munger: "I prefer a wonderful company at a fair price"',
+    lynch: 'P/E < 20 · ROE > 10% — Lynch: "Invest in what you know. Find overlooked growth companies before Wall Street does"',
+    graham: 'P/E < 15 · Dividend > 2% · Debt/Equity < 1 — Graham: "Buy at a significant discount to intrinsic value — margin of safety"',
+    dividend: 'Yield > 2.5% · ROE > 10% · Stable cash flows — Focus on passive income from quality dividend-paying companies',
+    growth: 'ROE > 25% · FCF Margin > 20% — High-compounding businesses with exceptional capital efficiency',
+    all: 'No strategy filter — shows all stocks passing your manual filters sorted by Buffett Score'
+  };
+
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function setStrategy(s, btn) {
+    currentStrategy = s;
+    document.querySelectorAll('.strat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('stratDesc').textContent = stratDescs[s];
+  }
+
+  async function runScan() {
+    const btn = document.getElementById('scanBtn');
+    const status = document.getElementById('scanStatus');
+    btn.disabled = true;
+    document.getElementById('progressBar').style.display = 'block';
+    
+    // Animate progress bar
+    let prog = 0;
+    const interval = setInterval(() => {
+      prog = Math.min(prog + 1, 90);
+      document.getElementById('progressFill').style.width = prog + '%';
+    }, 800);
+
+    const filters = {
+      maxPe: parseInt(document.getElementById('maxPe').value),
+      minRoe: parseInt(document.getElementById('minRoe').value),
+      minFcfMargin: parseInt(document.getElementById('minFcfMargin').value),
+      minDividend: parseFloat(document.getElementById('minDividend').value),
+      maxDebt: parseFloat(document.getElementById('maxDebt').value),
+      minBuffettScore: parseInt(document.getElementById('minBuffettScore').value),
+      maxPrice: parseInt(document.getElementById('maxPrice').value) >= 2000 ? null : parseInt(document.getElementById('maxPrice').value)
+    };
+
+    status.textContent = `Scanning 200 stocks via Yahoo Finance... (takes ~30s)`;
+
+    try {
+      const res = await fetch(`${API}/api/screen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filters, strategy: currentStrategy, limit: 200 })
+      });
+      const data = await res.json();
+
+      clearInterval(interval);
+      document.getElementById('progressFill').style.width = '100%';
+      setTimeout(() => { document.getElementById('progressBar').style.display = 'none'; }, 500);
+
+      allResults = data.passed || [];
+      renderResults(allResults);
+
+      document.getElementById('statsBar').style.display = 'flex';
+      document.getElementById('modeLabel').textContent = data.mode === 'live' ? '🟢 Live' : '🟡 Demo';
+      document.getElementById('liveCount').textContent = data.apiCallsUsed || 0;
+      document.getElementById('universeCount').textContent = data.total || 0;
+      document.getElementById('matchCount').textContent = data.count || 0;
+      document.getElementById('stratLabel').textContent = currentStrategy;
+
+      status.textContent = `✓ Found ${data.count} stocks matching your criteria`;
+      showTab('results', document.querySelectorAll('.tab-btn')[1]);
+
+    } catch (e) {
+      clearInterval(interval);
+      status.textContent = `Error: ${e.message}`;
     }
 
-    function selectStrategy(strategy, btn) {
-      currentStrategy = strategy;
-      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+    btn.disabled = false;
+  }
+
+  function scoreClass(s) {
+    if (s >= 80) return 'score-high';
+    if (s >= 60) return 'score-mid';
+    return 'score-low';
+  }
+
+  function renderResults(stocks) {
+    const grid = document.getElementById('stockGrid');
+    document.getElementById('resultsCount').textContent = `⭐ ${stocks.length} Assets Found`;
+
+    if (!stocks.length) {
+      grid.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:20px">No stocks matched — try loosening the filters</div>';
+      return;
     }
 
-    function updateLabel(id) {
-      document.getElementById(id + 'Val').textContent = document.getElementById(id).value;
-    }
-
-    function showWarning(msg) {
-      const elem = document.getElementById('warningMessage');
-      elem.textContent = '⚠️ ' + msg;
-      elem.classList.add('show');
-      setTimeout(() => { elem.classList.remove('show'); }, 7000);
-    }
-
-    function showInfo(msg) {
-      const elem = document.getElementById('infoMessage');
-      elem.textContent = 'ℹ️ ' + msg;
-      elem.classList.add('show');
-      setTimeout(() => { elem.classList.remove('show'); }, 5000);
-    }
-
-    async function checkAPIStatus() {
-      try {
-        const res = await fetch(`${API_BASE}/api/health`);
-        const data = await res.json();
-        
-        const statusEl = document.getElementById('apiStatus');
-        if (data.mode === 'live') {
-          statusEl.textContent = '✅ Live Data • FMP API Connected';
-          statusEl.classList.add('live');
-          apiMode = 'live';
-        } else {
-          statusEl.textContent = '⚠️ Demo Mode (FMP Key not set)';
-          statusEl.classList.remove('live');
-          apiMode = 'demo';
-          showWarning('FMP API key not configured. Set FMP_KEY in Vercel for live stock data.');
-        }
-      } catch (error) {
-        console.error('Health check failed:', error);
-        document.getElementById('apiStatus').textContent = '❌ API Error';
-      }
-    }
-
-    async function startScan() {
-      if (isScanning) return;
-      isScanning = true;
-      document.getElementById('scanBtn').disabled = true;
-
-      const filters = {
-        maxPe: parseInt(document.getElementById('pe').value),
-        maxPrice: parseInt(document.getElementById('price').value),
-        minDividend: parseFloat(document.getElementById('dividend').value),
-        maxDebt: parseFloat(document.getElementById('debt').value)
-      };
-
-      const tickers = ['AAPL','MSFT','GOOGL','AMZN','NVDA','META','TSLA','BRK.B','JNJ','KO','PG','MCD','V','UNH','JPM','XOM','WMT','BAC','PFE','MA','LLY','AXP','CSCO','CRM','IBM','ACN','PEP','MMM','GS','CVX','VZ','T','NFLX','ADBE','INTC','DIS','BA','MRK','ABT','ABBV','WFC','LIN','HON','QCOM','SYK','DUK','RTX','FDX','COST'];
-
-      document.getElementById('scanStatus').textContent = `Scanning ${tickers.length} stocks from FMP API...`;
-
-      try {
-        const res = await fetch(`${API_BASE}/api/screen`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tickers, filters, useCache: true, strategy: currentStrategy })
-        });
-        
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        console.log('API Response:', data);
-        
-        allResults = data.passed || [];
-
-        displayResults();
-        
-        document.getElementById('mode').textContent = data.mode === 'live' ? '🟢 Live' : '🟡 Demo';
-        document.getElementById('efficiency').textContent = data.efficiency || 0;
-        document.getElementById('apiCalls').textContent = data.apiCallsUsed || 0;
-        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-        document.getElementById('statsBox').style.display = 'block';
-
-        document.getElementById('scanStatus').textContent = `✓ Found ${data.count || 0} stocks matching your ${currentStrategy} strategy`;
-        if (data.mode === 'live') {
-          showInfo(`✅ Live data! ${data.count || 0} stocks matched.`);
-        } else {
-          showWarning(`Demo data. ${data.count || 0} stocks matched. Set FMP_KEY for live prices.`);
-        }
-
-        switchTab('results', document.querySelectorAll('.tabs button')[1]);
-      } catch (error) {
-        console.error('Scan error:', error);
-        document.getElementById('scanStatus').textContent = `❌ Error: ${error.message}`;
-        showWarning('Scan failed. Check if FMP_KEY is configured.');
-      } finally {
-        document.getElementById('scanBtn').disabled = false;
-        isScanning = false;
-      }
-    }
-
-    function displayResults() {
-      const grid = document.getElementById('stockGrid');
-      grid.innerHTML = allResults.map(s => `
+    grid.innerHTML = stocks.map(s => {
+      const changeClass = s.changePercent >= 0 ? 'pos' : 'neg';
+      const changeSign = s.changePercent >= 0 ? '+' : '';
+      const sc = s.buffettScore || 0;
+      const dot = s.source === 'live' ? '<span class="live-dot"></span>' : '<span class="demo-dot"></span>';
+      return `
         <div class="stock-card">
-          <div class="stock-ticker">${s.ticker}</div>
-          <div class="stock-company">${s.name || 'N/A'}</div>
-          <div class="stock-price">$${parseFloat(s.price).toFixed(2)}</div>
-          <div class="stock-metric">P/E: <strong>${s.peRatio || '—'}</strong></div>
-          <div class="stock-metric">ROE: <strong>${s.roe}%</strong></div>
-          <div class="stock-metric">Div: <strong>${s.dividendYield}%</strong></div>
-        </div>
-      `).join('');
+          <div class="card-header">
+            <div class="card-ticker">${dot}${s.ticker}</div>
+            <div class="card-score ${scoreClass(sc)}">${sc}</div>
+          </div>
+          <div class="card-name">${s.name}</div>
+          <div class="card-price">$${s.price}</div>
+          <div class="card-change ${changeClass}">${changeSign}${s.changePercent}% today</div>
+          <div class="card-kpis">
+            <div class="kpi"><strong>${s.peRatio || '—'}</strong>P/E Ratio</div>
+            <div class="kpi"><strong>${s.roe}%</strong>ROE</div>
+            <div class="kpi"><strong>${s.fcfMargin}%</strong>FCF Margin</div>
+            <div class="kpi"><strong>${s.dividendYield}%</strong>Dividend</div>
+            <div class="kpi"><strong>${s.debtToEquity}</strong>Debt/Eq</div>
+            <div class="kpi"><strong>${s.beta || '—'}</strong>Beta</div>
+          </div>
+          ${s.moat ? `<div class="moat-tag">🏰 ${s.moat}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
 
-      document.getElementById('resultCount').textContent = allResults.length;
-      document.getElementById('resultsPanel').classList.add('show');
-    }
+  function sortResults(key, btn) {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const sorted = [...allResults].sort((a, b) => (b[key] || 0) - (a[key] || 0));
+    renderResults(sorted);
+  }
 
-    function sortResults(field, order) {
-      allResults.sort((a, b) => {
-        let aVal = parseFloat(a[field]) || 0;
-        let bVal = parseFloat(b[field]) || 0;
-        return order === 'asc' ? aVal - bVal : bVal - aVal;
-      });
-      displayResults();
-    }
+  function exportCSV() {
+    if (!allResults.length) return;
+    const headers = ['Ticker','Name','Price','PE','ROE','FCF Margin','Dividend Yield','Debt/Equity','Buffett Score','Moat'];
+    const rows = allResults.map(s => [s.ticker,`"${s.name}"`,s.price,s.peRatio||'',s.roe,s.fcfMargin,s.dividendYield,s.debtToEquity,s.buffettScore,`"${s.moat||''}"`]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `stock-oracle-${currentStrategy}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
 
-    function exportHTML() {
-      let html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Stock Oracle Report</title>
-  <style>
-    body { font-family: Arial; margin: 40px; background: #f5f5f5; }
-    .header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    th { background: #34495e; color: white; padding: 12px; text-align: left; }
-    td { padding: 10px; border-bottom: 1px solid #ecf0f1; }
-    tr:hover { background: #f8f9fa; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Stock Oracle Report</h1>
-    <p>Generated: ${new Date().toLocaleString()}</p>
-    <p>Data Source: ${apiMode === 'live' ? '✅ FMP API (Live)' : '⚠️ Demo Mode'}</p>
-  </div>
-  <table>
-    <tr><th>Ticker</th><th>Company Name</th><th>Price</th><th>P/E</th><th>ROE</th><th>Dividend</th><th>Sector</th></tr>
-    ${allResults.map(s => `<tr><td><strong>${s.ticker}</strong></td><td>${s.name}</td><td>$${s.price}</td><td>${s.peRatio}</td><td>${s.roe}%</td><td>${s.dividendYield}%</td><td>${s.sector}</td></tr>`).join('')}
-  </table>
-</body>
-</html>`;
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'stock-oracle-' + new Date().toISOString().split('T')[0] + '.html';
-      a.click();
-    }
-
-    function exportCSV() {
-      let csv = 'Ticker,Company Name,Price,P/E,ROE,Dividend,Sector\n';
-      allResults.forEach(s => {
-        csv += `"${s.ticker}","${s.name}","$${s.price}","${s.peRatio}","${s.roe}%","${s.dividendYield}%","${s.sector}"\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'stock-oracle-' + new Date().toISOString().split('T')[0] + '.csv';
-      a.click();
-    }
-
-    function printPage() {
-      window.print();
-    }
-
-    window.addEventListener('load', () => {
-      checkAPIStatus();
-      showInfo('Stock screener ready. Click SCAN to start.');
-    });
-  </script>
+  // Health check
+  fetch('/api/health').then(r => r.json()).then(d => {
+    const el = document.getElementById('apiStatus');
+    el.textContent = `✅ Live · ${d.universe || 200} stocks`;
+    el.classList.add('live');
+  }).catch(() => {
+    document.getElementById('apiStatus').textContent = '⚠ Offline';
+  });
+</script>
 </body>
 </html>
