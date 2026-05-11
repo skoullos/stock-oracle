@@ -127,8 +127,9 @@
     .demo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); display: inline-block; }
 
     /* WATCHLIST STAR */
-    .star-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; line-height: 1; opacity: 0.4; transition: opacity 0.2s; position: absolute; top: 10px; right: 10px; }
-    .star-btn.starred { opacity: 1; }
+    .star-btn { background: rgba(0,0,0,0.3); border: 1px solid var(--border); cursor: pointer; font-size: 14px; padding: 4px 6px; line-height: 1; border-radius: 6px; opacity: 0.8; transition: all 0.2s; position: absolute; top: 8px; right: 8px; color: var(--muted); }
+    .star-btn:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+    .star-btn.starred { opacity: 1; color: var(--accent); border-color: var(--accent); background: rgba(212,168,83,0.15); }
 
     /* STATS BAR */
     .stats-bar { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 9px; color: var(--muted); display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
