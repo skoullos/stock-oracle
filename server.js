@@ -43,6 +43,35 @@ const mockStocks = {
   'BAC': { name: 'Bank of America', price: 36.78, pe: 9.8, yield: 2.8, roe: 9.2, sector: 'Financial' },
   'PFE': { name: 'Pfizer Inc.', price: 25.34, pe: 12.6, yield: 6.1, roe: 18.5, sector: 'Healthcare' },
   'MA': { name: 'Mastercard Inc.', price: 510.28, pe: 37.2, yield: 0.5, roe: 165.2, sector: 'Financial' },
+  'LLY': { name: 'Eli Lilly and Company', price: 783.45, pe: 58.2, yield: 0.6, roe: 28.5, sector: 'Healthcare' },
+  'AXP': { name: 'American Express', price: 234.56, pe: 14.2, yield: 1.1, roe: 85.3, sector: 'Financial' },
+  'CSCO': { name: 'Cisco Systems Inc.', price: 52.34, pe: 18.9, yield: 2.8, roe: 18.2, sector: 'Technology' },
+  'CRM': { name: 'Salesforce Inc.', price: 287.45, pe: 45.6, yield: 0, roe: 12.3, sector: 'Technology' },
+  'IBM': { name: 'IBM Corp.', price: 198.76, pe: 21.3, yield: 2.5, roe: 35.2, sector: 'Technology' },
+  'ACN': { name: 'Accenture plc', price: 315.68, pe: 27.1, yield: 1.4, roe: 22.5, sector: 'Technology' },
+  'PEP': { name: 'PepsiCo Inc.', price: 187.34, pe: 28.5, yield: 2.6, roe: 25.8, sector: 'Consumer Staples' },
+  'MMM': { name: '3M Company', price: 101.23, pe: 16.7, yield: 3.1, roe: 18.5, sector: 'Industrials' },
+  'GS': { name: 'The Goldman Sachs Group', price: 456.78, pe: 8.9, yield: 2.2, roe: 12.6, sector: 'Financial' },
+  'CVX': { name: 'Chevron Corp.', price: 168.45, pe: 9.2, yield: 3.8, roe: 14.2, sector: 'Energy' },
+  'VZ': { name: 'Verizon Communications', price: 41.23, pe: 8.5, yield: 6.2, roe: 28.5, sector: 'Telecom' },
+  'T': { name: 'AT&T Inc.', price: 19.87, pe: 7.2, yield: 7.1, roe: 14.2, sector: 'Telecom' },
+  'NFLX': { name: 'Netflix Inc.', price: 245.67, pe: 34.5, yield: 0, roe: 18.9, sector: 'Communication' },
+  'ADBE': { name: 'Adobe Inc.', price: 534.23, pe: 41.2, yield: 0, roe: 22.3, sector: 'Technology' },
+  'INTC': { name: 'Intel Corp.', price: 32.45, pe: 18.9, yield: 0, roe: 8.5, sector: 'Technology' },
+  'DIS': { name: 'The Walt Disney Company', price: 92.34, pe: 24.1, yield: 0.9, roe: 16.2, sector: 'Communication' },
+  'BA': { name: 'Boeing Co.', price: 198.76, pe: 45.3, yield: 0, roe: 5.2, sector: 'Industrials' },
+  'MRK': { name: 'Merck & Co.', price: 110.45, pe: 13.2, yield: 2.4, roe: 25.8, sector: 'Healthcare' },
+  'ABT': { name: 'Abbott Laboratories', price: 112.34, pe: 25.6, yield: 1.8, roe: 28.5, sector: 'Healthcare' },
+  'ABBV': { name: 'AbbVie Inc.', price: 168.90, pe: 9.8, yield: 4.2, roe: 22.3, sector: 'Healthcare' },
+  'WFC': { name: 'Wells Fargo & Co.', price: 61.23, pe: 10.2, yield: 2.8, roe: 11.5, sector: 'Financial' },
+  'LIN': { name: 'Linde plc', price: 487.34, pe: 27.3, yield: 1.5, roe: 18.9, sector: 'Materials' },
+  'HON': { name: 'Honeywell International', price: 216.45, pe: 24.5, yield: 1.9, roe: 25.2, sector: 'Industrials' },
+  'QCOM': { name: 'QUALCOMM Inc.', price: 198.76, pe: 19.8, yield: 0.6, roe: 32.5, sector: 'Technology' },
+  'SYK': { name: 'Stryker Corp.', price: 398.45, pe: 45.2, yield: 0.9, roe: 21.3, sector: 'Healthcare' },
+  'DUK': { name: 'Duke Energy Corp.', price: 101.23, pe: 15.6, yield: 4.1, roe: 12.5, sector: 'Utilities' },
+  'RTX': { name: 'RTX Corp.', price: 123.45, pe: 21.3, yield: 1.8, roe: 18.9, sector: 'Industrials' },
+  'FDX': { name: 'FedEx Corp.', price: 287.56, pe: 12.4, yield: 0.7, roe: 28.5, sector: 'Industrials' },
+  'COST': { name: 'Costco Wholesale Corp.', price: 876.45, pe: 52.3, yield: 0.6, roe: 35.8, sector: 'Consumer Staples' }
 };
 
 async function getStockFromFMP(ticker) {
@@ -91,10 +120,9 @@ app.post('/api/screen', async (req, res) => {
   
   const results = [];
   let apiCallsUsed = 0;
-  let usedMock = false;
 
   for (let i = 0; i < Math.min(tickers.length, 50); i++) {
-    const ticker = tickers[i];
+    const ticker = tickers[i].toUpperCase();
     
     // Try live first
     let stock = null;
@@ -118,15 +146,12 @@ app.post('/api/screen', async (req, res) => {
         sector: mock.sector,
         source: 'demo'
       };
-      usedMock = true;
+      console.log(`📊 ${ticker}: Demo data`);
     }
     
-    if (!stock) continue;
-    
-    if (!FMP_KEY || stock.source === 'demo') {
-      // For demo, just include realistic stocks
-    } else {
-      apiCallsUsed++;
+    if (!stock) {
+      console.log(`⏭️  ${ticker}: No data`);
+      continue;
     }
 
     const price = parseFloat(stock.price) || 0;
@@ -150,7 +175,7 @@ app.post('/api/screen', async (req, res) => {
     await new Promise(r => setTimeout(r, 50));
   }
 
-  console.log(`✅ Results: ${results.length} | API: ${apiCallsUsed} | Mock: ${usedMock ? 'YES' : 'NO'}\n`);
+  console.log(`✅ Results: ${results.length} | API: ${apiCallsUsed}\n`);
 
   res.json({
     passed: results,
