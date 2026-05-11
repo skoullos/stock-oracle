@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock Oracle — Buffett-Style Screener</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     :root {
       --bg: #09090b; --panel: #0f0f11; --card: #131316;
       --border: #27272a; --accent: #d4a853; --accent2: #edc97a;
@@ -13,7 +13,7 @@
       --yellow: #fbbf24; --red: #f87171; --gold: #7a5f2a;
       --indigo: #818cf8;
     }
-    body { font-family: Georgia, serif; background: var(--bg); color: var(--text); }
+    body { font-family: Georgia, serif; background: var(--bg); color: var(--text); overflow-x: hidden; -webkit-text-size-adjust: 100%; }
 
     /* HEADER */
     .header { border-bottom: 1px solid var(--border); padding: 12px 24px; background: var(--panel); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -177,7 +177,8 @@
     .modal-body { padding: 20px 24px; }
     .chart-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 18px; }
     .chart-title { font-size: 9px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
-    .chart-svg { width: 100%; height: 160px; }
+    .chart-svg { width: 100%; height: 160px; display: block; }
+    @media (max-width: 768px) { .chart-svg { height: 130px; } }
     .chart-loading { text-align: center; color: var(--muted); font-size: 11px; padding: 40px; }
     .kpi-section-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 18px 0 10px; font-weight: 700; }
     .kpi-table { width: 100%; border-collapse: collapse; font-size: 11px; }
@@ -202,6 +203,135 @@
     .progress-bar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
     .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
     .footer { margin-top: 30px; text-align: center; font-size: 9px; color: var(--muted); padding-top: 12px; border-top: 1px solid var(--border); }
+
+  /* ── MOBILE RESPONSIVE ─────────────────────────────────────── */
+  @media (max-width: 768px) {
+
+    /* Header */
+    .header { padding: 10px 14px; gap: 8px; }
+    .header-left h1 { font-size: 16px; }
+    .header-left small { font-size: 8px; letter-spacing: 0.2em; }
+    .header-right { gap: 8px; }
+    .beginner-toggle span { font-size: 9px; }
+    .api-status { font-size: 8px; padding: 3px 8px; }
+
+    /* Container */
+    .container { padding: 12px; }
+
+    /* Tabs — scrollable row on mobile */
+    .tabs { gap: 6px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .tab-btn { padding: 8px 14px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+
+    /* Panels */
+    .panel { padding: 14px; margin-bottom: 10px; border-radius: 10px; }
+    .panel-title { font-size: 9px; margin-bottom: 10px; }
+
+    /* Strategy buttons */
+    .strategy-grid { gap: 6px; }
+    .strat-btn { padding: 10px 12px; font-size: 11px; min-height: 44px; }
+
+    /* Filters — single column on mobile */
+    .filter-grid { grid-template-columns: 1fr; gap: 16px; }
+    .filter-item label { font-size: 12px; }
+    .filter-item label strong { font-size: 13px; }
+    .filter-hint { font-size: 10px; }
+    input[type="range"] { height: 20px; }
+
+    /* Scan button */
+    .scan-btn { width: 100%; padding: 14px; font-size: 14px; min-height: 48px; border-radius: 10px; }
+    .scan-row { flex-direction: column; align-items: stretch; }
+    .scan-status { font-size: 11px; text-align: center; }
+
+    /* Stock grid — 2 columns on tablet, 1 on small phone */
+    .stock-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+    /* Cards */
+    .stock-card, .simple-card { padding: 12px; border-radius: 10px; }
+    .card-ticker { font-size: 14px; }
+    .card-price { font-size: 15px; }
+    .card-name { font-size: 9px; }
+    .card-change { font-size: 9px; }
+    .kpi { font-size: 9px; }
+    .kpi strong { font-size: 10px; }
+    .moat-tag { font-size: 7px; padding: 2px 6px; }
+    .star-btn { font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+
+    /* Simple cards */
+    .simple-ticker { font-size: 16px; }
+    .simple-name { font-size: 10px; }
+    .simple-price { font-size: 18px; }
+    .simple-verdict { font-size: 11px; }
+    .simple-summary { font-size: 10px; }
+
+    /* Best pick banner */
+    .best-pick-inner { padding: 14px; }
+    .best-pick-label { font-size: 8px; }
+    .best-pick-grid { grid-template-columns: 1fr; gap: 10px; }
+    .bp-ticker { font-size: 16px; }
+    .bp-price { font-size: 18px; }
+    .bp-name { font-size: 9px; }
+    .bp-verdict { font-size: 9px; }
+    .bp-reason { font-size: 9px; }
+    .bp-pill { font-size: 8px; }
+
+    /* Results header */
+    .results-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .results-count { font-size: 12px; }
+    .export-row { gap: 6px; }
+    .export-btn { padding: 8px 12px; font-size: 11px; min-height: 40px; }
+
+    /* Sort row — scrollable */
+    .sort-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .sort-btn { white-space: nowrap; flex-shrink: 0; padding: 7px 12px; font-size: 10px; min-height: 36px; }
+
+    /* Stats bar */
+    .stats-bar { gap: 10px; font-size: 9px; padding: 8px 12px; }
+
+    /* Modal — full screen on mobile */
+    .modal-overlay { padding: 0; align-items: flex-end; }
+    .modal { border-radius: 16px 16px 0 0; max-height: 92vh; width: 100%; max-width: 100%; }
+    .modal-header { padding: 16px 16px 12px; }
+    .modal-ticker { font-size: 18px; }
+    .modal-name { font-size: 10px; }
+    .modal-price { font-size: 22px; }
+    .modal-change { font-size: 10px; }
+    .modal-body { padding: 14px 16px; }
+    .kpi-table { font-size: 11px; }
+    .kpi-table td { padding: 7px 4px; }
+    .kpi-section-title { font-size: 9px; margin: 14px 0 8px; }
+    .verdict-score { font-size: 28px; }
+    .verdict-label { font-size: 10px; }
+    .verdict-point { font-size: 10px; }
+
+    /* Tooltips — show below on mobile to avoid cutoff */
+    .tip:hover::after { left: 0; transform: none; width: 200px; }
+
+    /* Watchlist */
+    .watchlist-empty { padding: 40px 16px; }
+    .watchlist-empty .wl-icon { font-size: 36px; }
+
+    /* Legend */
+    .legend { grid-template-columns: 1fr; }
+    .legend-card { padding: 12px; }
+    .legend-name { font-size: 11px; }
+    .legend-desc { font-size: 10px; }
+  }
+
+  /* Very small phones (< 400px) — single column cards */
+  @media (max-width: 400px) {
+    .stock-grid { grid-template-columns: 1fr; }
+    .card-ticker { font-size: 16px; }
+    .card-price { font-size: 17px; }
+    .strat-btn { font-size: 12px; }
+    .scan-btn { font-size: 15px; }
+  }
+
+  /* Tablet (768px - 1024px) */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .stock-grid { grid-template-columns: repeat(3, 1fr); }
+    .filter-grid { grid-template-columns: repeat(2, 1fr); }
+    .best-pick-grid { grid-template-columns: 1fr 1fr; }
+  }
   </style>
 </head>
 <body>
@@ -387,6 +517,10 @@
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal" id="modal">
+    <!-- Mobile drag handle -->
+    <div style="display:flex;justify-content:center;padding:10px 0 2px;cursor:pointer" onclick="document.getElementById('modalOverlay').classList.remove('open')">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px"></div>
+    </div>
     <div class="modal-header">
       <div>
         <div class="modal-ticker" id="modalTicker">—</div>
