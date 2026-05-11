@@ -263,7 +263,7 @@
         </div>
 
         <div class="filter-item">
-          <label><span>Min Buffett Score <i class="tip" data-tip="Our composite quality score from 0 to 100 that combines ROE, FCF Margin, P/E ratio, debt, and dividend yield — weighted the way Buffett would. 80+ means exceptional quality. 60–79 is good. Below 60 has significant weaknesses by Buffett's standards.">?</i></span><strong id="bscoreVal">0</strong></label>
+          <label><span>Min Oracle Score <i class="tip" data-tip="Our proprietary 5-pillar algorithm (0–100). Stocks: Quality + Value + Safety + Income + Momentum. ETFs: Cost + Return + Diversification + Income. Set to 70+ for quality picks, 80+ for exceptional ones.">?</i></span><strong id="bscoreVal">0</strong></label>
           <input type="range" id="minBuffettScore" min="0" max="95" value="0" step="5" oninput="document.getElementById('bscoreVal').textContent=this.value">
           <div class="filter-hint">0 = no filter · 60+ = good quality · 80+ = exceptional</div>
         </div>
@@ -302,7 +302,7 @@
 
     <div class="sort-row">
       <span style="font-size:10px;color:var(--muted);margin-right:4px">Sort:</span>
-      <button class="sort-btn active" onclick="sortResults('buffettScore',this)">⭐ Buffett Score</button>
+      <button class="sort-btn active" onclick="sortResults('oracleScore',this)">🔮 Oracle Score</button>
       <button class="sort-btn" onclick="sortResults('price',this)">💵 Price</button>
       <button class="sort-btn" onclick="sortResults('peRatio',this)">📊 P/E</button>
       <button class="sort-btn" onclick="sortResults('dividendYield',this)">💰 Yield</button>
@@ -437,7 +437,7 @@
 
       <!-- BUFFETT VERDICT -->
       <div class="verdict">
-        <div class="verdict-title">🎩 Buffett Score <i class="tip" data-tip="A score from 0–100 that measures how closely this company matches Warren Buffett's investment criteria. It combines ROE, Free Cash Flow, P/E ratio, debt levels, and dividend yield. 80+ = exceptional. 60–79 = good. Below 60 = significant weaknesses.">?</i></div>
+        <div class="verdict-title">🔮 Oracle Score <i class="tip" data-tip="Our proprietary 5-pillar algorithm scoring 0–100. For stocks: Quality (30pts) + Value (25pts) + Safety (20pts) + Income (15pts) + Momentum (10pts). For ETFs: Cost Efficiency (35pts) + Return Quality (30pts) + Diversification (20pts) + Income (15pts). Higher = better investment.">?</i></div>
         <div class="verdict-score" id="verdictScore">—</div>
         <div class="verdict-label" id="verdictLabel">—</div>
         <div class="verdict-bar"><div class="verdict-fill" id="verdictFill"></div></div>
@@ -536,25 +536,35 @@
       ].join('');
     }
 
-    const score = stock.buffettScore||0;
-    document.getElementById('verdictScore').textContent = score+' / 100';
-    document.getElementById('verdictScore').style.color = score>=80?'var(--green)':score>=60?'var(--yellow)':'var(--red)';
-    document.getElementById('verdictLabel').textContent = score>=85?'Exceptional — Buffett would love this':score>=70?'Good — meets most Buffett criteria':score>=55?'Fair — some concerns':'Below Buffett standards';
-    document.getElementById('verdictFill').style.width = score+'%';
-    document.getElementById('verdictFill').style.background = score>=80?'var(--green)':score>=60?'var(--yellow)':'var(--red)';
+    const score = stock.oracleScore || stock.buffettScore || 0;
+    const vc = stock.oracleColor || (score >= 80 ? '#4ade80' : score >= 60 ? '#fbbf24' : '#f87171');
+    document.getElementById('verdictScore').textContent = score + ' / 100';
+    document.getElementById('verdictScore').style.color = vc;
+    document.getElementById('verdictLabel').textContent = stock.oracleVerdict
+      ? `${stock.oracleVerdict} — ${stock.oracleDesc}`
+      : (score >= 85 ? 'Exceptional — Buffett would love this' : score >= 70 ? 'Good — meets most criteria' : score >= 55 ? 'Fair — some concerns' : 'Below investment criteria');
+    document.getElementById('verdictFill').style.width = score + '%';
+    document.getElementById('verdictFill').style.background = vc;
 
+    // Pillar breakdown
+    const bd = stock.oracleBreakdown || {};
     const pts = [];
-    if(stock.roe>=15) pts.push({ok:true,text:`ROE ${stock.roe}% — strong return on equity ✓`});
-    else pts.push({ok:false,text:`ROE ${stock.roe}% — below Buffett's 15% threshold`});
-    if(stock.fcfMargin>=10) pts.push({ok:true,text:`FCF Margin ${stock.fcfMargin}% — healthy cash generation ✓`});
-    else pts.push({ok:false,text:`FCF Margin ${stock.fcfMargin}% — limited free cash flow`});
-    if(stock.peRatio&&stock.peRatio<=30) pts.push({ok:true,text:`P/E ${stock.peRatio} — reasonable valuation ✓`});
-    else if(stock.peRatio) pts.push({ok:false,text:`P/E ${stock.peRatio} — expensive by Buffett standards`});
-    if(stock.debtToEquity<=2) pts.push({ok:true,text:`Debt/Equity ${stock.debtToEquity} — manageable debt ✓`});
-    else pts.push({ok:false,text:`Debt/Equity ${stock.debtToEquity} — more debt than Buffett prefers`});
-    if(stock.moat&&stock.moat!=='Unknown') pts.push({ok:true,text:`Moat: ${stock.moat} ✓`});
-    document.getElementById('verdictPoints').innerHTML = pts.map(p=>
-      `<div class="verdict-point"><span class="icon">${p.ok?'✅':'⚠️'}</span><span style="color:${p.ok?'var(--text)':'var(--muted)'}">${p.text}</span></div>`
+
+    if (stock.isETF) {
+      if (bd.cost !== undefined)  pts.push({ ok: bd.cost >= 25,  text: `Cost Efficiency: ${bd.cost}/35 pts — Expense ratio ${stock.expenseRatio}%` });
+      if (bd.ret !== undefined)   pts.push({ ok: bd.ret >= 18,   text: `Return Quality: ${bd.ret}/30 pts — ${stock.roe}% 10-year annualised return` });
+      if (bd.div !== undefined)   pts.push({ ok: bd.div >= 14,   text: `Diversification: ${bd.div}/20 pts — ${stock.holdings ? stock.holdings.toLocaleString() : '?'} holdings` });
+      if (bd.inc !== undefined)   pts.push({ ok: bd.inc >= 8,    text: `Income: ${bd.inc}/15 pts — ${stock.dividendYield}% yield` });
+    } else {
+      if (bd.quality !== undefined)  pts.push({ ok: bd.quality >= 20,  text: `Quality: ${bd.quality}/30 pts — ROE ${stock.roe}%, FCF ${stock.fcfMargin}%, Moat: ${stock.moat || 'None'}` });
+      if (bd.value !== undefined)    pts.push({ ok: bd.value >= 14,    text: `Value: ${bd.value}/25 pts — P/E ${stock.peRatio || 'unknown'} (lower = cheaper)` });
+      if (bd.safety !== undefined)   pts.push({ ok: bd.safety >= 13,   text: `Safety: ${bd.safety}/20 pts — Debt/Equity ${stock.debtToEquity}` });
+      if (bd.income !== undefined)   pts.push({ ok: bd.income >= 8,    text: `Income: ${bd.income}/15 pts — ${stock.dividendYield}% dividend yield` });
+      if (bd.momentum !== undefined) pts.push({ ok: bd.momentum >= 6,  text: `Momentum: ${bd.momentum}/10 pts — ${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent}% today` });
+    }
+
+    document.getElementById('verdictPoints').innerHTML = pts.map(p =>
+      `<div class="verdict-point"><span class="icon">${p.ok ? '✅' : '⚠️'}</span><span style="color:${p.ok ? 'var(--text)' : 'var(--muted)'}">${p.text}</span></div>`
     ).join('');
 
     try {
@@ -695,7 +705,8 @@
     grid.innerHTML = stocks.map(s => {
       const changeClass = s.changePercent >= 0 ? 'pos' : 'neg';
       const changeSign = s.changePercent >= 0 ? '+' : '';
-      const sc = s.buffettScore || 0;
+      const sc = s.oracleScore || s.buffettScore || 0;
+      const vc = s.oracleColor || (sc >= 80 ? '#4ade80' : sc >= 60 ? '#fbbf24' : '#f87171');
       const dot = s.source === 'live' ? '<span class="live-dot"></span>' : '<span class="demo-dot"></span>';
       const etfBadge = s.isETF ? `<span style="font-size:8px;background:rgba(99,102,241,0.2);color:#818cf8;border:1px solid rgba(99,102,241,0.3);padding:1px 6px;border-radius:8px;margin-left:4px">ETF</span>` : '';
       const kpisHtml = s.isETF ? `
@@ -719,7 +730,7 @@
         <div class="stock-card" onclick='openModal(${JSON.stringify(s)})'>
           <div class="card-header">
             <div class="card-ticker">${dot}${s.ticker}${etfBadge}</div>
-            <div class="card-score ${scoreClass(sc)}">${sc}</div>
+            <div class="card-score" style="background:${vc}22;color:${vc};border:1px solid ${vc}44;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">${sc}</div>
           </div>
           <div class="card-name">${s.name}</div>
           <div class="card-price">$${s.price}</div>

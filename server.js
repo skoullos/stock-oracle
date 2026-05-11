@@ -319,18 +319,170 @@ async function fetchYahooData(ticker) {
 }
 
 // Buffett scoring formula
-function calcBuffettScore(f, pe, price) {
-  let score = 0;
-  if (f.roe > 15) score += 20;
-  if (f.roe > 20) score += 10;
-  if (f.roe > 30) score += 10;
-  if (pe && pe < 25) score += 15;
-  if (pe && pe < 15) score += 10;
-  if (f.yield > 1.5) score += 10;
-  if (f.fcfMargin > 15) score += 15;
-  if (f.fcfMargin > 25) score += 10;
-  if (f.debt < 1.0) score += 10;
-  return Math.min(score, 100);
+// ═══════════════════════════════════════════════════════════
+// ORACLE SCORE ALGORITHM v1.0
+// Multi-factor scoring: Quality + Value + Safety + Income + Momentum
+// Returns score 0-100 + breakdown by pillar
+// ═══════════════════════════════════════════════════════════
+
+function calcOracleScore(f, pe, changePercent, isETF) {
+  const breakdown = {};
+
+  if (isETF) {
+    // ── ETF SCORING ──────────────────────────────────────────
+
+    // Pillar 1: Cost Efficiency (35 pts) — lower expense = better
+    let cost = 0;
+    const exp = f.expenseRatio || 0.5;
+    if (exp <= 0.05)      cost = 35;
+    else if (exp <= 0.10) cost = 30;
+    else if (exp <= 0.15) cost = 25;
+    else if (exp <= 0.30) cost = 18;
+    else if (exp <= 0.50) cost = 10;
+    else                  cost = 4;
+    breakdown.costEfficiency = { score: cost, max: 35, label: `Expense ratio ${exp}%` };
+
+    // Pillar 2: Historical Return Quality (30 pts)
+    let ret = 0;
+    const r = f.roe || 0; // 10yr annualised return stored in roe
+    if (r >= 15)      ret = 30;
+    else if (r >= 12) ret = 24;
+    else if (r >= 10) ret = 18;
+    else if (r >= 7)  ret = 12;
+    else if (r >= 4)  ret = 6;
+    else if (r >= 0)  ret = 2;
+    breakdown.returnQuality = { score: ret, max: 30, label: `${r}% 10-year return` };
+
+    // Pillar 3: Diversification (20 pts)
+    let div = 0;
+    const h = f.holdings || 1;
+    if (h >= 1000)     div = 20;
+    else if (h >= 500) div = 17;
+    else if (h >= 200) div = 14;
+    else if (h >= 50)  div = 9;
+    else if (h >= 20)  div = 5;
+    else               div = 2;
+    breakdown.diversification = { score: div, max: 20, label: `${h.toLocaleString()} holdings` };
+
+    // Pillar 4: Income (15 pts)
+    let inc = 0;
+    const y = f.yield || 0;
+    if (y >= 4)      inc = 15;
+    else if (y >= 3) inc = 12;
+    else if (y >= 2) inc = 8;
+    else if (y >= 1) inc = 4;
+    else             inc = 1;
+    breakdown.income = { score: inc, max: 15, label: `${y}% yield` };
+
+    const total = cost + ret + div + inc;
+    return { score: Math.min(Math.round(total), 100), breakdown };
+
+  } else {
+    // ── STOCK SCORING ─────────────────────────────────────────
+
+    // Pillar 1: Quality (30 pts) — ROE + FCF + Moat
+    let quality = 0;
+    const roe = f.roe || 0;
+    const fcf = f.fcfMargin || 0;
+    const isFinancial = ['Banking Scale','Investment Banking','Brand/Network','Payment Network',
+      'Diversified/Insurance','Consumer Finance','Credit Cards','Asset Mgmt Scale',
+      'Asset Mgmt','Brokerage Scale','Supplemental Ins','Insurance'].includes(f.moat);
+
+    // ROE component (max 10)
+    if (roe >= 40)      quality += 10;
+    else if (roe >= 25) quality += 8;
+    else if (roe >= 15) quality += 6;
+    else if (roe >= 10) quality += 3;
+
+    // FCF component (max 10) — skip for financials (not applicable)
+    if (isFinancial) {
+      quality += 7; // neutral score for financials
+    } else {
+      if (fcf >= 30)      quality += 10;
+      else if (fcf >= 20) quality += 8;
+      else if (fcf >= 12) quality += 6;
+      else if (fcf >= 5)  quality += 3;
+    }
+
+    // Moat component (max 10)
+    const strongMoats = [
+      'Brand/Ecosystem','Software/Cloud','Search/Ads','Payment Network',
+      'Surgical Robots','Cystic Fibrosis','Creative Software','Analog Chips',
+      'Semi Inspection','Workflow SaaS','Heart Valves','Biotech',
+      'Membership Retail','Railroad','Industrial Gas','Asset Mgmt Scale',
+      'Chips/AI','E-comm/Cloud','Mobile Chips','Chips/Software','Enterprise DB'
+    ];
+    const goodMoats = ['Networking','CRM Platform','Pharmacy Chains','Streaming Content',
+      'Industrial Gas','Railroad','Logistics REIT','Cell Towers','Home Improvement',
+      'Membership Retail','Coffee Brand','Chocolate Brand'];
+    if (f.moat && f.moat !== 'Unknown') {
+      if (strongMoats.includes(f.moat))  quality += 10;
+      else if (goodMoats.includes(f.moat)) quality += 7;
+      else                                quality += 5;
+    }
+    breakdown.quality = { score: quality, max: 30, label: `ROE ${roe}% · FCF ${fcf}%` };
+
+    // Pillar 2: Value (25 pts) — P/E ratio
+    let value = 0;
+    if (!pe || pe <= 0)  value = 10; // unknown P/E — neutral
+    else if (pe <= 10)   value = 25;
+    else if (pe <= 15)   value = 22;
+    else if (pe <= 20)   value = 18;
+    else if (pe <= 25)   value = 14;
+    else if (pe <= 30)   value = 10;
+    else if (pe <= 40)   value = 5;
+    else if (pe <= 60)   value = 2;
+    else                 value = 0;
+    breakdown.value = { score: value, max: 25, label: pe ? `P/E ratio ${pe.toFixed(1)}` : 'P/E unknown' };
+
+    // Pillar 3: Safety (20 pts) — Debt/Equity
+    let safety = 0;
+    const debt = f.debt || 0;
+    if (isFinancial) {
+      safety = 14; // banks use leverage by design — neutral
+    } else {
+      if (debt <= 0.25)     safety = 20;
+      else if (debt <= 0.5) safety = 17;
+      else if (debt <= 1.0) safety = 13;
+      else if (debt <= 2.0) safety = 8;
+      else if (debt <= 3.0) safety = 4;
+      else                  safety = 0;
+    }
+    breakdown.safety = { score: safety, max: 20, label: isFinancial ? 'Financial co. (leverage normal)' : `Debt/Equity ${debt}` };
+
+    // Pillar 4: Income (15 pts) — Dividend yield
+    let income = 0;
+    const yld = f.yield || 0;
+    if (yld >= 5)       income = 15;
+    else if (yld >= 3)  income = 12;
+    else if (yld >= 2)  income = 8;
+    else if (yld >= 1)  income = 5;
+    else                income = 2; // growth companies reinvest — small reward
+    breakdown.income = { score: income, max: 15, label: `${yld}% dividend yield` };
+
+    // Pillar 5: Momentum (10 pts) — Today's price change
+    let momentum = 0;
+    const chg = changePercent || 0;
+    if (chg >= 3)        momentum = 10;
+    else if (chg >= 1)   momentum = 8;
+    else if (chg >= 0)   momentum = 6;
+    else if (chg >= -1)  momentum = 3;
+    else if (chg >= -3)  momentum = 1;
+    else                 momentum = 0;
+    breakdown.momentum = { score: momentum, max: 10, label: `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}% today` };
+
+    const total = quality + value + safety + income + momentum;
+    return { score: Math.min(Math.round(total), 100), breakdown };
+  }
+}
+
+function oracleVerdict(score) {
+  if (score >= 90) return { label: '🏆 Exceptional', color: '#4ade80', desc: 'Rare quality. Strong conviction buy.' };
+  if (score >= 80) return { label: '⭐ Excellent',   color: '#86efac', desc: 'High quality. Worth owning.' };
+  if (score >= 70) return { label: '✅ Good',        color: '#fbbf24', desc: 'Solid investment. Meets key criteria.' };
+  if (score >= 60) return { label: '👍 Fair',        color: '#fb923c', desc: 'Some concerns. Research further.' };
+  if (score >= 50) return { label: '⚠️ Weak',        color: '#f87171', desc: 'Significant issues. Proceed carefully.' };
+  return             { label: '❌ Poor',             color: '#ef4444', desc: 'Does not meet investment criteria.' };
 }
 
 app.get('/api/health', (req, res) => {
@@ -417,7 +569,9 @@ app.post('/api/screen', async (req, res) => {
 
     if (!include) continue;
 
-    const score = fundamentals[t]?.buffettScore || calcBuffettScore(f, pe, price);
+    const oracle = calcOracleScore(f, pe, change, isETF);
+    const score = oracle.score;
+    const verdict = oracleVerdict(score);
 
     results.push({
       ticker: t,
@@ -429,11 +583,15 @@ app.post('/api/screen', async (req, res) => {
       fcfMargin: parseFloat(f.fcfMargin.toFixed(1)),
       debtToEquity: parseFloat(f.debt.toFixed(2)),
       moat: f.moat,
-      buffettScore: score,
+      buffettScore: score,       // kept for backward compat
+      oracleScore: score,
+      oracleVerdict: verdict.label,
+      oracleColor: verdict.color,
+      oracleDesc: verdict.desc,
+      oracleBreakdown: oracle.breakdown,
       marketCap,
       changePercent: parseFloat(change.toFixed(2)),
       source: yahoo ? 'live' : 'demo',
-      // ETF-specific fields
       isETF: isETF,
       etfCategory: f.category || null,
       expenseRatio: f.expenseRatio || null,
