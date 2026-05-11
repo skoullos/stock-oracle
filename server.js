@@ -10,7 +10,7 @@ app.use(express.static('public'));
 const UNIVERSE = [
   // Technology
   'AAPL','MSFT','GOOGL','NVDA','META','TSLA','ADBE','CRM','ORCL','INTC',
-  'CSCO','IBM','QCOM','TXN','AVGO','AMD','MU','AMAT','KLAC','LRCX',
+  'CSCO','IBM','QCOM','TXN','AVGO','AMD','AMAT','KLAC','LRCX','MU',
   'NOW','SNOW','PLTR','UBER','LYFT','SHOP','SQ','PYPL','NFLX','SPOT',
   // Consumer
   'AMZN','WMT','COST','TGT','HD','LOW','MCD','SBUX','NKE','DIS',
@@ -19,25 +19,24 @@ const UNIVERSE = [
   // Financial
   'BRK.B','JPM','BAC','WFC','GS','MS','C','USB','PNC','TFC',
   'AXP','V','MA','COF','DFS','SYF','AIG','MET','PRU','AFL',
-  'BLK','SCHW','MS','TROW','IVZ','AMG','BEN','LNC','UNM','GL',
+  'BLK','SCHW','TROW',
   // Healthcare
   'JNJ','UNH','PFE','MRK','ABBV','ABT','TMO','DHR','MDT','SYK',
-  'BSX','EW','ISRG','ZBH','BAX','BDX','RMD','IDXX','ALGN','HSIC',
-  'LLY','BMY','GILD','AMGN','BIIB','REGN','VRTX','MRNA','ILMN','IQV',
+  'BSX','EW','ISRG','LLY','BMY','GILD','AMGN','REGN','VRTX',
   // Energy
-  'XOM','CVX','COP','EOG','PXD','SLB','HAL','BKR','MPC','VLO',
-  'PSX','OXY','DVN','FANG','APA','HES','MRO','OKE','WMB','KMI',
+  'XOM','CVX','COP','EOG','SLB','MPC','VLO','PSX','OXY','OKE',
+  'WMB','KMI',
   // Industrials
-  'HON','MMM','GE','BA','RTX','LMT','NOC','GD','LHX','TDG',
-  'CAT','DE','EMR','ITW','PH','ROK','FDX','UPS','CSX','UNP',
+  'HON','MMM','GE','LMT','NOC','GD','LHX','CAT','DE','EMR',
+  'ITW','PH','ROK','FDX','UPS','CSX','UNP',
   // Materials
-  'LIN','APD','SHW','ECL','PPG','NEM','FCX','NUE','STLD','CLF',
+  'LIN','APD','SHW','ECL','PPG','NEM','FCX','NUE',
   // Utilities
-  'NEE','DUK','SO','D','AEP','EXC','SRE','PEG','ED','XEL',
+  'SO','D','AEP','EXC','SRE','PEG','ED','XEL','NEE','DUK',
   // Real Estate
   'AMT','PLD','CCI','EQIX','PSA','EQR','AVB','O','WELL','SPG',
-  // Communication
-  'VZ','T','TMUS','CHTR','CMCSA','NFLX','PARA','WBD','FOX','NYT'
+  // Telecom
+  'VZ','T','TMUS','CHTR','CMCSA'
 ];
 
 // Static fundamentals (ROE, dividend yield, debt/equity etc from last annual report)
@@ -106,6 +105,136 @@ const fundamentals = {
   'T': { roe: 12.5, yield: 7.5, debt: 3.2, fcfMargin: 8.5, moat: 'Telecom Network', buffettScore: 58 },
   'AMT': { roe: 28.5, yield: 3.2, debt: 4.5, fcfMargin: 38.5, moat: 'Cell Towers', buffettScore: 78 },
   'O': { roe: 4.5, yield: 5.8, debt: 0.8, fcfMargin: 52.5, moat: 'Net Lease REIT', buffettScore: 72 },
+
+  // Additional Technology
+  'MU': { roe: 5.2, yield: 0.5, debt: 0.4, fcfMargin: 8.5, moat: 'Memory Chips', buffettScore: 52 },
+  'AMAT': { roe: 50.5, yield: 0.9, debt: 0.5, fcfMargin: 27.5, moat: 'Semi Equipment', buffettScore: 85 },
+  'KLAC': { roe: 92.5, yield: 1.0, debt: 1.5, fcfMargin: 32.8, moat: 'Semi Inspection', buffettScore: 87 },
+  'LRCX': { roe: 52.3, yield: 1.0, debt: 0.7, fcfMargin: 28.5, moat: 'Semi Equipment', buffettScore: 83 },
+  'NOW': { roe: 16.5, yield: 0, debt: 0.3, fcfMargin: 30.5, moat: 'Workflow SaaS', buffettScore: 80 },
+  'SNOW': { roe: -8.5, yield: 0, debt: 0, fcfMargin: 23.5, moat: 'Data Cloud', buffettScore: 55 },
+  'PLTR': { roe: 8.5, yield: 0, debt: 0, fcfMargin: 28.5, moat: 'Gov Analytics', buffettScore: 62 },
+  'UBER': { roe: 22.5, yield: 0, debt: 0.8, fcfMargin: 12.5, moat: 'Rideshare Network', buffettScore: 68 },
+  'LYFT': { roe: -15.2, yield: 0, debt: 1.2, fcfMargin: 5.5, moat: 'Rideshare', buffettScore: 42 },
+  'SHOP': { roe: 12.5, yield: 0, debt: 0.1, fcfMargin: 16.5, moat: 'E-com Platform', buffettScore: 70 },
+  'SQ': { roe: 2.5, yield: 0, debt: 1.1, fcfMargin: 5.2, moat: 'Payment Platform', buffettScore: 55 },
+  'PYPL': { roe: 21.5, yield: 0, debt: 0.6, fcfMargin: 18.5, moat: 'Payment Network', buffettScore: 75 },
+  'NFLX': { roe: 32.5, yield: 0, debt: 0.7, fcfMargin: 16.5, moat: 'Streaming Content', buffettScore: 78 },
+  'SPOT': { roe: 18.5, yield: 0, debt: 0.4, fcfMargin: 9.5, moat: 'Music Streaming', buffettScore: 65 },
+
+  // Consumer Staples & Cyclical
+  'KMB': { roe: 295.5, yield: 3.4, debt: 5.8, fcfMargin: 12.5, moat: 'Tissue Brands', buffettScore: 75 },
+  'GIS': { roe: 30.5, yield: 3.0, debt: 1.5, fcfMargin: 14.5, moat: 'Food Brands', buffettScore: 78 },
+  'K':   { roe: 25.5, yield: 3.5, debt: 2.5, fcfMargin: 11.5, moat: 'Cereal Brands', buffettScore: 70 },
+  'HSY': { roe: 52.5, yield: 2.4, debt: 1.8, fcfMargin: 16.5, moat: 'Chocolate Brand', buffettScore: 85 },
+  'MDLZ': { roe: 14.5, yield: 2.5, debt: 0.9, fcfMargin: 14.5, moat: 'Snack Brands', buffettScore: 78 },
+  'CPB': { roe: 25.5, yield: 3.3, debt: 2.5, fcfMargin: 11.5, moat: 'Soup Brand', buffettScore: 70 },
+  'CAG': { roe: 12.5, yield: 4.8, debt: 1.5, fcfMargin: 10.5, moat: 'Food Brands', buffettScore: 65 },
+  'SJM': { roe: 8.5, yield: 3.5, debt: 0.8, fcfMargin: 10.5, moat: 'Food Brands', buffettScore: 65 },
+  'HRL': { roe: 14.5, yield: 3.2, debt: 0.4, fcfMargin: 8.5, moat: 'Meat Brands', buffettScore: 70 },
+  'TSN': { roe: 5.5, yield: 3.5, debt: 0.5, fcfMargin: 3.5, moat: 'Meat Processing', buffettScore: 55 },
+  'KHC': { roe: 5.5, yield: 5.0, debt: 0.4, fcfMargin: 12.5, moat: 'Food Brands', buffettScore: 60 },
+  'MNST': { roe: 25.5, yield: 0, debt: 0, fcfMargin: 22.5, moat: 'Energy Drink', buffettScore: 88 },
+  'FIZZ': { roe: 32.5, yield: 0, debt: 0, fcfMargin: 14.5, moat: 'Seltzer Brand', buffettScore: 78 },
+  'CELH': { roe: 28.5, yield: 0, debt: 0.1, fcfMargin: 18.5, moat: 'Energy Drink', buffettScore: 75 },
+  'TGT': { roe: 28.5, yield: 3.2, debt: 1.1, fcfMargin: 4.2, moat: 'Retail Brand', buffettScore: 72 },
+  'HD':  { roe: 985.2, yield: 2.5, debt: 12.1, fcfMargin: 12.5, moat: 'Home Improvement', buffettScore: 85 },
+  'LOW': { roe: 420.5, yield: 2.1, debt: 8.5, fcfMargin: 10.2, moat: 'Home Improvement', buffettScore: 80 },
+  'SBUX': { roe: 85.2, yield: 2.8, debt: 3.2, fcfMargin: 14.5, moat: 'Coffee Brand', buffettScore: 75 },
+  'NKE': { roe: 38.5, yield: 1.8, debt: 0.7, fcfMargin: 11.2, moat: 'Brand', buffettScore: 80 },
+
+  // Financial
+  'MS': { roe: 12.5, yield: 3.2, debt: 0, fcfMargin: 0, moat: 'Investment Banking', buffettScore: 70 },
+  'C': { roe: 6.5, yield: 4.2, debt: 0, fcfMargin: 0, moat: 'Banking Scale', buffettScore: 60 },
+  'USB': { roe: 11.5, yield: 4.8, debt: 0, fcfMargin: 0, moat: 'Banking Scale', buffettScore: 70 },
+  'PNC': { roe: 10.5, yield: 4.2, debt: 0, fcfMargin: 0, moat: 'Banking Scale', buffettScore: 70 },
+  'TFC': { roe: 8.5, yield: 6.2, debt: 0, fcfMargin: 0, moat: 'Banking Scale', buffettScore: 62 },
+  'COF': { roe: 9.5, yield: 1.8, debt: 1.5, fcfMargin: 0, moat: 'Credit Cards', buffettScore: 65 },
+  'DFS': { roe: 22.5, yield: 1.8, debt: 1.2, fcfMargin: 0, moat: 'Payment Network', buffettScore: 78 },
+  'SYF': { roe: 18.5, yield: 2.4, debt: 1.2, fcfMargin: 0, moat: 'Consumer Finance', buffettScore: 70 },
+  'AIG': { roe: 8.5, yield: 1.8, debt: 0.5, fcfMargin: 0, moat: 'Insurance', buffettScore: 60 },
+  'MET': { roe: 11.5, yield: 2.8, debt: 0.5, fcfMargin: 0, moat: 'Insurance', buffettScore: 65 },
+  'PRU': { roe: 7.5, yield: 4.5, debt: 0.5, fcfMargin: 0, moat: 'Insurance', buffettScore: 62 },
+  'AFL': { roe: 18.5, yield: 2.1, debt: 0.3, fcfMargin: 0, moat: 'Supplemental Ins', buffettScore: 80 },
+  'BLK': { roe: 14.5, yield: 2.4, debt: 0.5, fcfMargin: 30.5, moat: 'Asset Mgmt Scale', buffettScore: 88 },
+  'SCHW': { roe: 12.5, yield: 1.5, debt: 0, fcfMargin: 38.5, moat: 'Brokerage Scale', buffettScore: 78 },
+  'TROW': { roe: 22.5, yield: 4.5, debt: 0, fcfMargin: 35.5, moat: 'Asset Mgmt', buffettScore: 82 },
+
+  // Healthcare
+  'TMO': { roe: 14.5, yield: 0.3, debt: 0.9, fcfMargin: 18.5, moat: 'Lab Equipment', buffettScore: 82 },
+  'DHR': { roe: 12.5, yield: 0.4, debt: 0.4, fcfMargin: 22.5, moat: 'Diagnostics', buffettScore: 82 },
+  'MDT': { roe: 8.5, yield: 3.4, debt: 0.6, fcfMargin: 18.5, moat: 'Medical Devices', buffettScore: 72 },
+  'SYK': { roe: 15.5, yield: 0.9, debt: 0.7, fcfMargin: 18.5, moat: 'Medical Devices', buffettScore: 80 },
+  'BSX': { roe: 11.5, yield: 0, debt: 0.7, fcfMargin: 16.5, moat: 'Medical Devices', buffettScore: 75 },
+  'EW':  { roe: 22.5, yield: 0, debt: 0.2, fcfMargin: 22.5, moat: 'Heart Valves', buffettScore: 85 },
+  'ISRG': { roe: 18.5, yield: 0, debt: 0, fcfMargin: 25.5, moat: 'Surgical Robots', buffettScore: 90 },
+  'BMY': { roe: 12.5, yield: 4.8, debt: 1.5, fcfMargin: 25.5, moat: 'Pharma', buffettScore: 72 },
+  'GILD': { roe: 22.5, yield: 4.2, debt: 1.5, fcfMargin: 35.5, moat: 'Pharma', buffettScore: 80 },
+  'AMGN': { roe: 145.5, yield: 3.2, debt: 8.5, fcfMargin: 32.5, moat: 'Biotech', buffettScore: 82 },
+  'REGN': { roe: 18.5, yield: 0, debt: 0.1, fcfMargin: 32.5, moat: 'Biotech', buffettScore: 85 },
+  'VRTX': { roe: 22.5, yield: 0, debt: 0.1, fcfMargin: 38.5, moat: 'Cystic Fibrosis', buffettScore: 88 },
+
+  // Energy
+  'COP': { roe: 22.5, yield: 2.5, debt: 0.4, fcfMargin: 22.5, moat: 'Energy E&P', buffettScore: 78 },
+  'EOG': { roe: 25.5, yield: 2.8, debt: 0.2, fcfMargin: 22.5, moat: 'Energy E&P', buffettScore: 80 },
+  'SLB': { roe: 22.5, yield: 2.5, debt: 0.8, fcfMargin: 12.5, moat: 'Oilfield Services', buffettScore: 75 },
+  'MPC': { roe: 28.5, yield: 2.2, debt: 1.0, fcfMargin: 5.5, moat: 'Refining', buffettScore: 72 },
+  'VLO': { roe: 22.5, yield: 2.8, debt: 0.5, fcfMargin: 4.5, moat: 'Refining', buffettScore: 72 },
+  'PSX': { roe: 18.5, yield: 3.4, debt: 0.7, fcfMargin: 4.5, moat: 'Refining', buffettScore: 70 },
+  'OXY': { roe: 14.5, yield: 1.5, debt: 1.0, fcfMargin: 18.5, moat: 'Energy E&P', buffettScore: 72 },
+  'OKE': { roe: 22.5, yield: 5.2, debt: 2.5, fcfMargin: 18.5, moat: 'Pipelines', buffettScore: 72 },
+  'WMB': { roe: 14.5, yield: 4.8, debt: 2.5, fcfMargin: 28.5, moat: 'Pipelines', buffettScore: 72 },
+  'KMI': { roe: 8.5, yield: 6.2, debt: 1.2, fcfMargin: 22.5, moat: 'Pipelines', buffettScore: 68 },
+
+  // Industrials
+  'GE': { roe: 18.5, yield: 0.6, debt: 0.7, fcfMargin: 9.5, moat: 'Aerospace', buffettScore: 75 },
+  'LMT': { roe: 65.5, yield: 2.8, debt: 2.5, fcfMargin: 9.5, moat: 'Defense', buffettScore: 80 },
+  'NOC': { roe: 22.5, yield: 1.7, debt: 1.2, fcfMargin: 7.5, moat: 'Defense', buffettScore: 78 },
+  'GD': { roe: 18.5, yield: 2.0, debt: 0.5, fcfMargin: 8.5, moat: 'Defense', buffettScore: 78 },
+  'LHX': { roe: 14.5, yield: 2.2, debt: 0.9, fcfMargin: 14.5, moat: 'Defense Tech', buffettScore: 75 },
+  'EMR': { roe: 28.5, yield: 1.8, debt: 0.5, fcfMargin: 14.5, moat: 'Automation', buffettScore: 78 },
+  'ITW': { roe: 88.5, yield: 2.4, debt: 2.5, fcfMargin: 18.5, moat: 'Diversified Mfg', buffettScore: 85 },
+  'PH':  { roe: 22.5, yield: 1.0, debt: 1.0, fcfMargin: 14.5, moat: 'Motion Tech', buffettScore: 78 },
+  'ROK': { roe: 35.5, yield: 1.7, debt: 1.2, fcfMargin: 12.5, moat: 'Industrial Auto', buffettScore: 78 },
+  'UPS': { roe: 125.5, yield: 4.8, debt: 3.5, fcfMargin: 8.5, moat: 'Logistics Network', buffettScore: 78 },
+  'CSX': { roe: 25.5, yield: 1.5, debt: 1.8, fcfMargin: 24.5, moat: 'Railroad', buffettScore: 82 },
+  'UNP': { roe: 42.5, yield: 2.3, debt: 2.0, fcfMargin: 28.5, moat: 'Railroad', buffettScore: 85 },
+
+  // Materials
+  'APD': { roe: 14.5, yield: 2.8, debt: 0.7, fcfMargin: 18.5, moat: 'Industrial Gas', buffettScore: 78 },
+  'SHW': { roe: 65.5, yield: 1.0, debt: 3.5, fcfMargin: 14.5, moat: 'Paint Brand', buffettScore: 82 },
+  'ECL': { roe: 18.5, yield: 1.1, debt: 1.0, fcfMargin: 14.5, moat: 'Specialty Chemicals', buffettScore: 78 },
+  'PPG': { roe: 22.5, yield: 2.0, debt: 1.5, fcfMargin: 10.5, moat: 'Coatings', buffettScore: 72 },
+  'NEM': { roe: 8.5, yield: 3.5, debt: 0.4, fcfMargin: 12.5, moat: 'Gold Mining', buffettScore: 62 },
+  'FCX': { roe: 18.5, yield: 1.2, debt: 0.5, fcfMargin: 14.5, moat: 'Copper Mining', buffettScore: 65 },
+  'NUE': { roe: 28.5, yield: 1.8, debt: 0.3, fcfMargin: 14.5, moat: 'Steel', buffettScore: 75 },
+
+  // Utilities
+  'SO':  { roe: 12.5, yield: 4.0, debt: 1.8, fcfMargin: 0, moat: 'Utility', buffettScore: 68 },
+  'D':   { roe: 8.5, yield: 5.2, debt: 1.9, fcfMargin: 0, moat: 'Utility', buffettScore: 65 },
+  'AEP': { roe: 9.5, yield: 4.2, debt: 1.7, fcfMargin: 0, moat: 'Utility', buffettScore: 68 },
+  'EXC': { roe: 8.5, yield: 3.7, debt: 1.6, fcfMargin: 0, moat: 'Utility', buffettScore: 65 },
+  'SRE': { roe: 9.5, yield: 3.2, debt: 1.4, fcfMargin: 0, moat: 'Utility', buffettScore: 65 },
+  'PEG': { roe: 11.5, yield: 3.5, debt: 1.3, fcfMargin: 0, moat: 'Utility', buffettScore: 70 },
+  'ED':  { roe: 7.5, yield: 3.6, debt: 1.4, fcfMargin: 0, moat: 'Utility', buffettScore: 65 },
+  'XEL': { roe: 10.5, yield: 3.4, debt: 1.5, fcfMargin: 0, moat: 'Utility', buffettScore: 68 },
+  'NEE': { roe: 12.5, yield: 2.8, debt: 1.5, fcfMargin: 0, moat: 'Utility/Renewables', buffettScore: 72 },
+
+  // Real Estate (REITs)
+  'AMT': { roe: 28.5, yield: 3.2, debt: 4.5, fcfMargin: 38.5, moat: 'Cell Towers', buffettScore: 78 },
+  'PLD': { roe: 8.5, yield: 3.5, debt: 0.5, fcfMargin: 52.5, moat: 'Logistics REIT', buffettScore: 75 },
+  'CCI': { roe: 14.5, yield: 6.2, debt: 5.5, fcfMargin: 32.5, moat: 'Cell Towers', buffettScore: 70 },
+  'EQIX': { roe: 8.5, yield: 2.2, debt: 1.6, fcfMargin: 22.5, moat: 'Data Centers', buffettScore: 75 },
+  'PSA': { roe: 18.5, yield: 4.0, debt: 0.9, fcfMargin: 52.5, moat: 'Storage REIT', buffettScore: 80 },
+  'EQR': { roe: 5.5, yield: 3.8, debt: 0.8, fcfMargin: 42.5, moat: 'Apartment REIT', buffettScore: 70 },
+  'AVB': { roe: 5.5, yield: 3.4, debt: 0.7, fcfMargin: 45.5, moat: 'Apartment REIT', buffettScore: 70 },
+  'WELL': { roe: 4.5, yield: 2.0, debt: 0.7, fcfMargin: 35.5, moat: 'Senior Housing', buffettScore: 65 },
+  'SPG': { roe: 28.5, yield: 4.8, debt: 8.5, fcfMargin: 38.5, moat: 'Mall REIT', buffettScore: 70 },
+
+  // Communication / Telecom
+  'TMUS': { roe: 12.5, yield: 1.5, debt: 2.5, fcfMargin: 18.5, moat: 'Wireless', buffettScore: 70 },
+  'CHTR': { roe: 35.5, yield: 0, debt: 5.5, fcfMargin: 18.5, moat: 'Cable', buffettScore: 68 },
+  'CMCSA': { roe: 14.5, yield: 3.2, debt: 1.2, fcfMargin: 14.5, moat: 'Cable/Media', buffettScore: 72 }
 };
 
 function getDefaultFundamentals(ticker) {
@@ -188,26 +317,32 @@ app.post('/api/screen', async (req, res) => {
     if (filters.minFcfMargin && f.fcfMargin < filters.minFcfMargin) continue;
     if (filters.minBuffettScore && f.buffettScore < filters.minBuffettScore) continue;
 
-    // Strategy filter
+    // Strategy filter — note: for financial companies (banks, insurance) FCF margin and debt ratios don't apply the same way
+    const isFinancial = ['Banking Scale','Investment Banking','Brand/Network','Payment Network','Diversified/Insurance'].includes(f.moat);
+
     let include = false;
     switch (strategy) {
       case 'buffett':
-        include = f.roe > 15 && f.fcfMargin > 10 && (!pe || pe < 30) && f.debt < 2.0;
+        // Buffett owns banks, so don't penalise financials for FCF margin
+        include = f.roe > 15 && (!pe || pe < 30) && f.debt < 2.0 && (isFinancial || f.fcfMargin > 10);
         break;
       case 'munger':
-        include = f.roe > 20 && f.moat !== 'Unknown' && f.fcfMargin > 15;
+        // Munger wants moat + high ROE
+        include = f.roe > 20 && f.moat && f.moat !== 'Unknown' && (isFinancial || f.fcfMargin > 15);
         break;
       case 'lynch':
-        include = pe && pe < 20 && f.roe > 10;
+        // Lynch: cheap (low P/E) but only filter if P/E is known
+        include = f.roe > 10 && (!pe || pe < 20);
         break;
       case 'graham':
-        include = pe && pe < 15 && f.yield > 2 && f.debt < 1.0;
+        // Graham: cheap + dividend + low debt. P/E filter only if known.
+        include = f.yield > 2 && f.debt < 1.0 && f.roe > 5 && (!pe || pe < 15);
         break;
       case 'dividend':
         include = f.yield > 2.5 && f.roe > 10;
         break;
       case 'growth':
-        include = f.roe > 25 && f.fcfMargin > 20;
+        include = f.roe > 25 && (isFinancial || f.fcfMargin > 20);
         break;
       case 'all':
         include = true;
