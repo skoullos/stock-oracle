@@ -274,7 +274,7 @@
     <!-- SCAN -->
     <div class="panel">
       <div class="scan-row">
-        <button class="scan-btn" id="scanBtn" onclick="runScan()">⚡ Scan 200 Stocks</button>
+        <button class="scan-btn" id="scanBtn" onclick="runScan()">⚡ Scan All Stocks</button>
         <span class="scan-status" id="scanStatus">Ready — using Yahoo Finance live prices</span>
       </div>
       <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
@@ -311,7 +311,7 @@
     </div>
 
     <div class="stock-grid" id="stockGrid">
-      <div style="color:var(--muted);font-size:12px;padding:20px">Run a scan first → click "⚡ Scan 200 Stocks"</div>
+      <div style="color:var(--muted);font-size:12px;padding:20px">Run a scan first → click "⚡ Scan All Stocks"</div>
     </div>
   </div>
 
@@ -453,6 +453,7 @@
   let allResults = [];
   let currentStrategy = 'buffett';
   let currentSort = 'buffettScore';
+  let universeSize = 0;
 
   function closeModal(e) {
     if (e.target === document.getElementById('modalOverlay'))
@@ -627,7 +628,7 @@
       maxPrice: parseInt(document.getElementById('maxPrice').value) >= 2000 ? null : parseInt(document.getElementById('maxPrice').value)
     };
 
-    status.textContent = `Scanning 200 stocks via Yahoo Finance... (takes ~30s)`;
+    status.textContent = `Scanning ${universeSize || '160+'} stocks via Yahoo Finance... (takes ~30s)`;
 
     try {
       const res = await fetch(`${API}/api/screen`, {
@@ -724,9 +725,11 @@
 
   // Health check
   fetch('/api/health').then(r => r.json()).then(d => {
+    universeSize = d.universe || 0;
     const el = document.getElementById('apiStatus');
-    el.textContent = `✅ Live · ${d.universe || 200} stocks`;
+    el.textContent = `✅ Live · ${universeSize} stocks`;
     el.classList.add('live');
+    document.getElementById('scanBtn').textContent = `⚡ Scan All ${universeSize} Stocks`;
   }).catch(() => {
     document.getElementById('apiStatus').textContent = '⚠ Offline';
   });
