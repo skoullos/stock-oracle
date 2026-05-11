@@ -6,12 +6,13 @@ app.use(cors());
 app.use(express.json());
 
 const FMP_KEY = process.env.FMP_API_key;
-const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
+// Use the NEW /stable/ endpoint base URL instead of /v3/
+const FMP_BASE = 'https://financialmodelingprep.com/stable';
 
 app.use(express.static('public'));
 
 console.log(`\n🚀 Stock Oracle running`);
-console.log(`FMP_KEY: ${FMP_KEY ? '✅ SET (' + FMP_KEY.length + ' chars)' : '❌ NOT SET'}\n`);
+console.log(`FMP_KEY: ${FMP_KEY ? '✅ SET' : '❌ NOT SET'}\n`);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -24,46 +25,46 @@ app.get('/api/health', (req, res) => {
 async function getStockFromFMP(ticker) {
   try {
     if (!FMP_KEY) {
-      console.log(`❌ No API key`);
+      console.log(`❌ No FMP_API_key`);
       return null;
     }
 
-    // Try the company profile endpoint instead
-    const url = `${FMP_BASE}/profile/${ticker}?apikey=${FMP_KEY}`;
+    // Use NEW /stable/ endpoint
+    const url = `${FMP_BASE}/quote?symbol=${ticker}&apikey=${FMP_KEY}`;
     console.log(`📡 Fetching ${ticker}...`);
     
     const res = await fetch(url);
     const data = await res.json();
 
-    if (res.status === 403) {
-      console.log(`❌ ${ticker}: 403 Forbidden - API key issue`);
+    if (res.status === 403 || data.Error) {
+      console.log(`❌ ${ticker}: ${data.Error || 'Forbidden'}`);
       return null;
     }
 
-    if (!Array.isArray(data) || data.length === 0) {
-      console.log(`⚠️  ${ticker}: No data from profile endpoint`);
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.log(`⚠️  ${ticker}: No data`);
       return null;
     }
 
-    const profile = data[0];
-    if (!profile.price) {
-      console.log(`⚠️  ${ticker}: No price in profile`);
+    const quote = data[0];
+    if (!quote.price) {
+      console.log(`⚠️  ${ticker}: No price`);
       return null;
     }
 
-    console.log(`✅ ${ticker}: $${profile.price}`);
+    console.log(`✅ ${ticker}: $${quote.price}`);
 
     return {
       ticker: ticker.toUpperCase(),
-      name: profile.companyName || ticker,
-      price: profile.price,
+      name: quote.symbol || ticker,
+      price: quote.price,
       peRatio: null,
       changePercent: 0,
       dividendYield: (Math.random() * 4 + 0.5).toFixed(2),
       roe: (Math.random() * 25 + 10).toFixed(2),
       beta: (Math.random() * 1.5 + 0.6).toFixed(2),
       debtToEquity: (Math.random() * 2).toFixed(2),
-      sector: profile.sector || 'Technology',
+      sector: 'Technology',
       source: 'live'
     };
   } catch (error) {
@@ -76,6 +77,7 @@ app.post('/api/screen', async (req, res) => {
   const { tickers, filters, strategy = 'value' } = req.body;
 
   console.log(`\n🔍 Screening ${tickers.length} stocks`);
+  console.log(`Using: ${FMP_BASE}`);
   
   const results = [];
   let apiCallsUsed = 0;
