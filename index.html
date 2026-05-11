@@ -127,9 +127,9 @@
     .demo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); display: inline-block; }
 
     /* WATCHLIST STAR */
-    .star-btn { background: rgba(0,0,0,0.3); border: 1px solid var(--border); cursor: pointer; font-size: 14px; padding: 4px 6px; line-height: 1; border-radius: 6px; opacity: 0.8; transition: all 0.2s; position: absolute; top: 8px; right: 8px; color: var(--muted); }
-    .star-btn:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
-    .star-btn.starred { opacity: 1; color: var(--accent); border-color: var(--accent); background: rgba(212,168,83,0.15); }
+    .star-btn { background: rgba(0,0,0,0.3); border: 1px solid var(--border); cursor: pointer; font-size: 16px; padding: 3px 7px; line-height: 1; border-radius: 6px; transition: all 0.2s; color: var(--muted); flex-shrink: 0; min-width: 30px; min-height: 30px; display: flex; align-items: center; justify-content: center; }
+    .star-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(212,168,83,0.1); }
+    .star-btn.starred { color: var(--accent); border-color: var(--accent); background: rgba(212,168,83,0.15); }
 
     /* STATS BAR */
     .stats-bar { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 9px; color: var(--muted); display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -255,7 +255,6 @@
     .kpi { font-size: 9px; }
     .kpi strong { font-size: 10px; }
     .moat-tag { font-size: 7px; padding: 2px 6px; }
-    .star-btn { font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
 
     /* Simple cards */
     .simple-ticker { font-size: 16px; }
@@ -841,8 +840,10 @@
       // BEGINNER SIMPLE CARD
       const summary = buildSimpleSummary(s);
       return `<div class="simple-card" onclick='openModal(${safeS})'>
-        <button class="star-btn ${starred ? 'starred' : ''}" onclick='toggleStar(event, ${safeS})'>${starred ? '★' : '☆'}</button>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">${dot}<span class="simple-ticker">${s.ticker}</span>${etfBadge}${greekBadge}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:6px">${dot}<span class="simple-ticker">${s.ticker}</span>${etfBadge}${greekBadge}</div>
+          <button class="star-btn ${starred ? 'starred' : ''}" style="position:static" onclick='toggleStar(event, ${safeS})' title="${starred ? 'Remove' : 'Save to Watchlist'}">${starred ? '★' : '☆'}</button>
+        </div>
         <div class="simple-name">${s.name}</div>
         <div class="simple-price">$${s.price} <span style="font-size:11px;color:${s.changePercent>=0?'var(--green)':'var(--red)'}">${changeSign}${s.changePercent}%</span></div>
         <div class="simple-score-bar"><div class="simple-score-fill" style="width:${sc}%;background:${vc}"></div></div>
@@ -871,10 +872,12 @@
         ${s.moat ? `<div class="moat-tag">🏰 ${s.moat}</div>` : ''}`;
 
     return `<div class="stock-card" onclick='openModal(${safeS})'>
-        <button class="star-btn ${starred ? 'starred' : ''}" onclick='toggleStar(event, ${safeS})'>${starred ? '★' : '☆'}</button>
         <div class="card-header">
           <div class="card-ticker">${dot} ${s.ticker} ${etfBadge}${greekBadge}</div>
-          <div style="background:${vc}22;color:${vc};border:1px solid ${vc}44;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">${sc}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="background:${vc}22;color:${vc};border:1px solid ${vc}44;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">${sc}</div>
+            <button class="star-btn ${starred ? 'starred' : ''}" onclick='toggleStar(event, ${safeS})' title="${starred ? 'Remove from Watchlist' : 'Add to Watchlist'}">${starred ? '★' : '☆'}</button>
+          </div>
         </div>
         <div class="card-name">${s.name}</div>
         <div class="card-price">$${s.price}</div>
