@@ -5,41 +5,63 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const FMP_KEY = process.env.FMP_API_key;
+// Debug: log all environment variables that contain 'FMP'
+console.log(`\n🔍 Environment Variables containing 'FMP':`);
+Object.keys(process.env).forEach(key => {
+  if (key.toUpperCase().includes('FMP')) {
+    console.log(`  ${key}: ${process.env[key] ? '✅ SET' : '❌ NOT SET'}`);
+  }
+});
+
+// Try both possible variable names
+const FMP_KEY = process.env.FMP_API_key || process.env.FMP_KEY;
 const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
 
 app.use(express.static('public'));
 
 console.log(`\n🚀 Stock Oracle running`);
-console.log(`FMP_KEY: ${FMP_KEY ? '✅ SET' : '❌ NOT SET'}\n`);
+console.log(`FMP_KEY found: ${FMP_KEY ? '✅ YES' : '❌ NO'}\n`);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     mode: FMP_KEY ? 'live' : 'demo',
-    fmpKeySet: !!FMP_KEY
+    fmpKeySet: !!FMP_KEY,
+    keyLength: FMP_KEY ? FMP_KEY.length : 0
   });
 });
 
 async function getStockFromFMP(ticker) {
   try {
     if (!FMP_KEY) {
-      console.log(`No API key`);
+      console.log(`❌ No FMP_KEY available`);
       return null;
     }
 
     const url = `${FMP_BASE}/quote-short/${ticker}?apikey=${FMP_KEY}`;
+    console.log(`📡 Fetching ${ticker}...`);
+    
     const res = await fetch(url);
     const data = await res.json();
 
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    // Check for API errors
+    if (data.Error || (Array.isArray(data) && data.length === 0)) {
+      console.log(`⚠️  ${ticker}: ${data.Error || 'No data'}`);
+      return null;
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      console.log(`⚠️  ${ticker}: Invalid response`);
       return null;
     }
 
     const quote = data[0];
-    if (!quote.price) return null;
+    if (!quote.price) {
+      console.log(`⚠️  ${ticker}: No price`);
+      return null;
+    }
 
-    console.log(`${ticker}: $${quote.price}`);
+    console.log(`✅ ${ticker}: $${quote.price}`);
 
     return {
       ticker: ticker.toUpperCase(),
@@ -55,7 +77,7 @@ async function getStockFromFMP(ticker) {
       source: 'live'
     };
   } catch (error) {
-    console.error(`Error: ${ticker} - ${error.message}`);
+    console.error(`❌ ${ticker}: ${error.message}`);
     return null;
   }
 }
@@ -63,24 +85,29 @@ async function getStockFromFMP(ticker) {
 app.post('/api/screen', async (req, res) => {
   const { tickers, filters, strategy = 'value' } = req.body;
 
-  console.log(`Screening ${tickers.length} stocks...`);
+  console.log(`\n🔍 Screening ${tickers.length} stocks with ${strategy}...`);
+  console.log(`FMP_KEY status: ${FMP_KEY ? '✅ SET' : '❌ NOT SET'}`);
   
   const results = [];
   let apiCallsUsed = 0;
+  let failedCalls = 0;
 
   for (let i = 0; i < Math.min(tickers.length, 50); i++) {
     const ticker = tickers[i];
     const stock = await getStockFromFMP(ticker);
     
-    if (!stock) continue;
+    if (!stock) {
+      failedCalls++;
+      continue;
+    }
     
     apiCallsUsed++;
 
     const price = parseFloat(stock.price) || 0;
     const pe = parseFloat(stock.peRatio) || 0;
 
-    // Very simple: just check if price is reasonable
-    if (price > 0 && price < 1000) {
+    // Very loose filter
+    if (price > 0 && price < 2000) {
       results.push({
         ticker: stock.ticker,
         name: stock.name,
@@ -96,8 +123,10 @@ app.post('/api/screen', async (req, res) => {
       });
     }
 
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 150));
   }
+
+  console.log(`✅ Results: ${results.length} | API calls: ${apiCallsUsed} | Failed: ${failedCalls}\n`);
 
   res.json({
     passed: results,
@@ -113,5 +142,5 @@ app.post('/api/screen', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Ready\n`);
+  console.log(`📊 Ready\n`);
 });
