@@ -601,27 +601,34 @@ function calcOracleScore(f, pe, changePercent, isETF) {
     breakdown.safety = { score: safety, max: 20, label: isFinancial ? 'Financial co. (leverage normal)' : `Debt/Equity ${debt}` };
 
     // Pillar 4: Income (15 pts) — Dividend yield
+    // High-FCF growth companies that reinvest (MSFT, AAPL, ASML) get partial credit
     let income = 0;
     const yld = f.yield || 0;
-    if (yld >= 5)       income = 15;
-    else if (yld >= 3)  income = 12;
-    else if (yld >= 2)  income = 8;
-    else if (yld >= 1)  income = 5;
-    else                income = 2; // growth companies reinvest — small reward
-    breakdown.income = { score: income, max: 15, label: `${yld}% dividend yield` };
+    const fcf4 = f.fcfMargin || 0;
+    if (yld >= 5)                        income = 15;
+    else if (yld >= 3)                   income = 12;
+    else if (yld >= 2)                   income = 9;
+    else if (yld >= 1)                   income = 6;
+    else if (fcf4 >= 25)                 income = 6;  // high FCF = could pay, chooses to reinvest
+    else if (fcf4 >= 15)                 income = 4;
+    else                                 income = 2;
+    breakdown.income = { score: income, max: 15, label: `${yld}% yield · FCF ${fcf4}%` };
 
-    // Pillar 5: Momentum (10 pts) — Today's price change
-    let momentum = 0;
-    const chg = changePercent || 0;
-    if (chg >= 3)        momentum = 10;
-    else if (chg >= 1)   momentum = 8;
-    else if (chg >= 0)   momentum = 6;
-    else if (chg >= -1)  momentum = 3;
-    else if (chg >= -3)  momentum = 1;
-    else                 momentum = 0;
-    breakdown.momentum = { score: momentum, max: 10, label: `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}% today` };
+    // Pillar 5: Consistency (10 pts) — Cash generation reliability
+    let consistency = 0;
+    const yld2 = f.yield || 0;
+    const fcf5 = f.fcfMargin || 0;
+    if (yld2 >= 3 && fcf5 >= 15)   consistency = 10; // pays well AND generates cash
+    else if (yld2 >= 2 && fcf5 >= 10) consistency = 9;
+    else if (fcf5 >= 30)            consistency = 9;  // MSFT/AAPL tier - massive free cash
+    else if (fcf5 >= 20)            consistency = 8;  // strong cash generator
+    else if (yld2 >= 1 || fcf5 >= 12) consistency = 6;
+    else if (fcf5 >= 5)             consistency = 4;
+    else                            consistency = 3;
+    if (isFinancial && yld2 >= 3)  consistency = 8;
+    breakdown.consistency = { score: consistency, max: 10, label: `Yield ${yld2}% · FCF ${fcf5}%` };
 
-    const total = quality + value + safety + income + momentum;
+    const total = quality + value + safety + income + consistency;
     return { score: Math.min(Math.round(total), 100), breakdown };
   }
 }

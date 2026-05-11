@@ -127,9 +127,9 @@
     .demo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); display: inline-block; }
 
     /* WATCHLIST STAR */
-    .star-btn { background: rgba(0,0,0,0.3); border: 1px solid var(--border); cursor: pointer; font-size: 16px; padding: 3px 7px; line-height: 1; border-radius: 6px; transition: all 0.2s; color: var(--muted); flex-shrink: 0; min-width: 30px; min-height: 30px; display: flex; align-items: center; justify-content: center; }
-    .star-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(212,168,83,0.1); }
-    .star-btn.starred { color: var(--accent); border-color: var(--accent); background: rgba(212,168,83,0.15); }
+    .star-btn { background: rgba(212,168,83,0.08); border: 1px solid var(--border); cursor: pointer; font-size: 15px; padding: 4px 8px; line-height: 1; border-radius: 6px; transition: all 0.2s; color: var(--muted); flex-shrink: 0; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; }
+    .star-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(212,168,83,0.2); }
+    .star-btn.starred { color: var(--accent); border-color: var(--accent); background: rgba(212,168,83,0.2); }
 
     /* STATS BAR */
     .stats-bar { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 9px; color: var(--muted); display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -1035,7 +1035,7 @@
       const vs=bscore('value');    if(vs!==undefined) pts.push({ok:vs>=14, text:`Value: ${vs}/25 pts — ${blabel('value')}`});
       const ss=bscore('safety');   if(ss!==undefined) pts.push({ok:ss>=13, text:`Safety: ${ss}/20 pts — ${blabel('safety')}`});
       const ins=bscore('income');  if(ins!==undefined) pts.push({ok:ins>=8, text:`Income: ${ins}/15 pts — ${stock.dividendYield}% yield`});
-      const ms=bscore('momentum'); if(ms!==undefined) pts.push({ok:ms>=6,  text:`Momentum: ${ms}/10 pts — ${blabel('momentum')}`});
+      const cs2=bscore('consistency'); if(cs2!==undefined) pts.push({ok:cs2>=7, text:`Consistency: ${cs2}/10 pts — ${blabel('consistency')}`});
     }
     document.getElementById('verdictPoints').innerHTML = pts.map(p =>
       `<div class="verdict-point"><span class="icon">${p.ok ? '✅' : '⚠️'}</span><span style="color:${p.ok ? 'var(--text)' : 'var(--muted)'}">${p.text}</span></div>`
