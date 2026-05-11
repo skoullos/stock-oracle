@@ -36,7 +36,19 @@ const UNIVERSE = [
   // Real Estate
   'AMT','PLD','CCI','EQIX','PSA','EQR','AVB','O','WELL','SPG',
   // Telecom
-  'VZ','T','TMUS','CHTR','CMCSA'
+  'VZ','T','TMUS','CHTR','CMCSA',
+  // ETFs — Broad Market
+  'SPY','QQQ','DIA','IWM','VTI','VOO',
+  // ETFs — Sector
+  'XLK','XLF','XLV','XLE','XLU','XLI','XLP','XLY','XLB','XLRE',
+  // ETFs — Dividend & Value
+  'VYM','SCHD','DVY','VIG','HDV',
+  // ETFs — Bonds & Defensive
+  'AGG','BND','TLT','HYG',
+  // ETFs — International
+  'EFA','EEM','VEA','VXUS',
+  // ETFs — Thematic
+  'ARKK','SOXX','GLD','VNQ','ICLN'
 ];
 
 // Static fundamentals (ROE, dividend yield, debt/equity etc from last annual report)
@@ -234,7 +246,50 @@ const fundamentals = {
   // Communication / Telecom
   'TMUS': { roe: 12.5, yield: 1.5, debt: 2.5, fcfMargin: 18.5, moat: 'Wireless', buffettScore: 70 },
   'CHTR': { roe: 35.5, yield: 0, debt: 5.5, fcfMargin: 18.5, moat: 'Cable', buffettScore: 68 },
-  'CMCSA': { roe: 14.5, yield: 3.2, debt: 1.2, fcfMargin: 14.5, moat: 'Cable/Media', buffettScore: 72 }
+  'CMCSA': { roe: 14.5, yield: 3.2, debt: 1.2, fcfMargin: 14.5, moat: 'Cable/Media', buffettScore: 72 },
+
+  // ── ETFs ─────────────────────────────────────────────────────────
+  // For ETFs: roe = 10yr annualised return, fcfMargin = cost efficiency (100 - expense%), debt = 0
+  // Broad Market
+  'SPY':  { roe: 10.5, yield: 1.3, debt: 0, fcfMargin: 99.91, moat: 'S&P 500 — 500 largest US companies', buffettScore: 88, type: 'etf', expenseRatio: 0.09, holdings: 503, category: 'Broad Market' },
+  'QQQ':  { roe: 14.2, yield: 0.6, debt: 0, fcfMargin: 99.80, moat: 'Nasdaq 100 — top 100 tech-heavy US stocks', buffettScore: 85, type: 'etf', expenseRatio: 0.20, holdings: 101, category: 'Broad Market' },
+  'DIA':  { roe: 9.8,  yield: 1.8, debt: 0, fcfMargin: 99.83, moat: 'Dow Jones — 30 blue-chip US companies', buffettScore: 82, type: 'etf', expenseRatio: 0.17, holdings: 30, category: 'Broad Market' },
+  'IWM':  { roe: 8.5,  yield: 1.2, debt: 0, fcfMargin: 99.81, moat: 'Russell 2000 — 2000 small-cap US companies', buffettScore: 72, type: 'etf', expenseRatio: 0.19, holdings: 2000, category: 'Broad Market' },
+  'VTI':  { roe: 10.2, yield: 1.4, debt: 0, fcfMargin: 99.97, moat: 'Total US Market — nearly every US stock', buffettScore: 90, type: 'etf', expenseRatio: 0.03, holdings: 3700, category: 'Broad Market' },
+  'VOO':  { roe: 10.5, yield: 1.4, debt: 0, fcfMargin: 99.97, moat: "S&P 500 — Vanguard's ultra-low cost version", buffettScore: 92, type: 'etf', expenseRatio: 0.03, holdings: 503, category: 'Broad Market' },
+  // Sector
+  'XLK':  { roe: 18.5, yield: 0.6, debt: 0, fcfMargin: 99.87, moat: 'Technology Sector — AAPL, MSFT, NVDA etc', buffettScore: 82, type: 'etf', expenseRatio: 0.13, holdings: 65, category: 'Sector — Technology' },
+  'XLF':  { roe: 11.5, yield: 1.8, debt: 0, fcfMargin: 99.87, moat: 'Financial Sector — banks, insurers, asset managers', buffettScore: 75, type: 'etf', expenseRatio: 0.13, holdings: 72, category: 'Sector — Financial' },
+  'XLV':  { roe: 12.5, yield: 1.6, debt: 0, fcfMargin: 99.87, moat: 'Healthcare Sector — pharma, devices, insurers', buffettScore: 80, type: 'etf', expenseRatio: 0.13, holdings: 62, category: 'Sector — Healthcare' },
+  'XLE':  { roe: 14.5, yield: 3.5, debt: 0, fcfMargin: 99.87, moat: 'Energy Sector — oil, gas, pipelines', buffettScore: 70, type: 'etf', expenseRatio: 0.13, holdings: 22, category: 'Sector — Energy' },
+  'XLU':  { roe: 9.5,  yield: 3.2, debt: 0, fcfMargin: 99.87, moat: 'Utilities Sector — electric, water, gas utilities', buffettScore: 68, type: 'etf', expenseRatio: 0.13, holdings: 30, category: 'Sector — Utilities' },
+  'XLI':  { roe: 11.5, yield: 1.5, debt: 0, fcfMargin: 99.87, moat: 'Industrials Sector — aerospace, transport, machinery', buffettScore: 75, type: 'etf', expenseRatio: 0.13, holdings: 77, category: 'Sector — Industrials' },
+  'XLP':  { roe: 14.5, yield: 2.6, debt: 0, fcfMargin: 99.87, moat: 'Consumer Staples — food, beverages, household goods', buffettScore: 80, type: 'etf', expenseRatio: 0.13, holdings: 38, category: 'Sector — Consumer Staples' },
+  'XLY':  { roe: 18.5, yield: 0.8, debt: 0, fcfMargin: 99.87, moat: 'Consumer Discretionary — retail, autos, restaurants', buffettScore: 75, type: 'etf', expenseRatio: 0.13, holdings: 51, category: 'Sector — Consumer Disc.' },
+  'XLB':  { roe: 12.5, yield: 2.0, debt: 0, fcfMargin: 99.87, moat: 'Materials Sector — chemicals, metals, mining', buffettScore: 68, type: 'etf', expenseRatio: 0.13, holdings: 28, category: 'Sector — Materials' },
+  'XLRE': { roe: 6.5,  yield: 3.5, debt: 0, fcfMargin: 99.87, moat: 'Real Estate Sector — REITs and property companies', buffettScore: 65, type: 'etf', expenseRatio: 0.13, holdings: 31, category: 'Sector — Real Estate' },
+  // Dividend
+  'VYM':  { roe: 9.5,  yield: 2.9, debt: 0, fcfMargin: 99.94, moat: 'High Dividend Yield — 400+ dividend-paying US stocks', buffettScore: 82, type: 'etf', expenseRatio: 0.06, holdings: 436, category: 'Dividend' },
+  'SCHD': { roe: 11.5, yield: 3.4, debt: 0, fcfMargin: 99.94, moat: 'Quality Dividend — 100 stocks with strong dividend history', buffettScore: 88, type: 'etf', expenseRatio: 0.06, holdings: 100, category: 'Dividend' },
+  'DVY':  { roe: 10.5, yield: 4.5, debt: 0, fcfMargin: 99.65, moat: 'High Dividend — 100 highest-yielding US stocks', buffettScore: 75, type: 'etf', expenseRatio: 0.35, holdings: 100, category: 'Dividend' },
+  'VIG':  { roe: 12.5, yield: 1.8, debt: 0, fcfMargin: 99.94, moat: 'Dividend Growth — companies raising dividends 10+ years', buffettScore: 85, type: 'etf', expenseRatio: 0.06, holdings: 338, category: 'Dividend Growth' },
+  'HDV':  { roe: 11.5, yield: 3.8, debt: 0, fcfMargin: 99.92, moat: 'High Dividend — financially healthy high-yield stocks', buffettScore: 78, type: 'etf', expenseRatio: 0.08, holdings: 75, category: 'Dividend' },
+  // Bonds
+  'AGG':  { roe: 4.2,  yield: 3.8, debt: 0, fcfMargin: 99.96, moat: 'Total Bond Market — thousands of US bonds', buffettScore: 55, type: 'etf', expenseRatio: 0.04, holdings: 11000, category: 'Bonds — Aggregate' },
+  'BND':  { roe: 4.1,  yield: 3.7, debt: 0, fcfMargin: 99.97, moat: 'Total Bond Market — Vanguard ultra-low cost', buffettScore: 58, type: 'etf', expenseRatio: 0.03, holdings: 10000, category: 'Bonds — Aggregate' },
+  'TLT':  { roe: 2.5,  yield: 4.2, debt: 0, fcfMargin: 99.85, moat: '20+ Year Treasury Bonds — US government long-term debt', buffettScore: 48, type: 'etf', expenseRatio: 0.15, holdings: 40, category: 'Bonds — Treasury' },
+  'HYG':  { roe: 5.5,  yield: 5.8, debt: 0, fcfMargin: 99.51, moat: 'High Yield Bonds — higher-risk corporate bonds', buffettScore: 45, type: 'etf', expenseRatio: 0.49, holdings: 1200, category: 'Bonds — High Yield' },
+  // International
+  'EFA':  { roe: 9.5,  yield: 3.2, debt: 0, fcfMargin: 99.68, moat: 'Developed Markets — Europe, Japan, Australia', buffettScore: 70, type: 'etf', expenseRatio: 0.32, holdings: 800, category: 'International Developed' },
+  'EEM':  { roe: 10.5, yield: 2.8, debt: 0, fcfMargin: 99.32, moat: 'Emerging Markets — China, India, Brazil, Taiwan', buffettScore: 65, type: 'etf', expenseRatio: 0.68, holdings: 1300, category: 'Emerging Markets' },
+  'VEA':  { roe: 9.8,  yield: 3.4, debt: 0, fcfMargin: 99.94, moat: 'Developed Markets — low-cost international exposure', buffettScore: 72, type: 'etf', expenseRatio: 0.06, holdings: 4000, category: 'International Developed' },
+  'VXUS': { roe: 9.2,  yield: 3.2, debt: 0, fcfMargin: 99.94, moat: 'Total International — all non-US stocks worldwide', buffettScore: 70, type: 'etf', expenseRatio: 0.06, holdings: 8000, category: 'International Total' },
+  // Thematic
+  'ARKK': { roe: -5.5, yield: 0.0, debt: 0, fcfMargin: 99.25, moat: 'Disruptive Innovation — speculative tech and biotech', buffettScore: 30, type: 'etf', expenseRatio: 0.75, holdings: 35, category: 'Thematic — Innovation' },
+  'SOXX': { roe: 22.5, yield: 0.8, debt: 0, fcfMargin: 99.65, moat: 'Semiconductors — chip designers and manufacturers', buffettScore: 80, type: 'etf', expenseRatio: 0.35, holdings: 30, category: 'Thematic — Semiconductors' },
+  'GLD':  { roe: 8.5,  yield: 0.0, debt: 0, fcfMargin: 99.60, moat: 'Gold — tracks the price of physical gold', buffettScore: 42, type: 'etf', expenseRatio: 0.40, holdings: 1, category: 'Commodity — Gold' },
+  'VNQ':  { roe: 6.5,  yield: 4.2, debt: 0, fcfMargin: 99.88, moat: 'Real Estate — US REITs and real estate stocks', buffettScore: 68, type: 'etf', expenseRatio: 0.12, holdings: 160, category: 'Real Estate' },
+  'ICLN': { roe: 5.5,  yield: 1.2, debt: 0, fcfMargin: 99.58, moat: 'Clean Energy — solar, wind, renewable companies', buffettScore: 55, type: 'etf', expenseRatio: 0.42, holdings: 100, category: 'Thematic — Clean Energy' }
 };
 
 function getDefaultFundamentals(ticker) {
@@ -306,49 +361,58 @@ app.post('/api/screen', async (req, res) => {
     const marketCap = yahoo?.marketCap || null;
     if (yahoo) liveCount++;
 
-    if (!price) continue; // skip if no live price
+    if (!price) continue;
 
-    // Apply filters
-    if (filters.maxPe && pe && pe > filters.maxPe) continue;
-    if (filters.maxPrice && price > filters.maxPrice) continue;
-    if (filters.minDividend && f.yield < filters.minDividend) continue;
-    if (filters.maxDebt && f.debt > filters.maxDebt) continue;
-    if (filters.minRoe && f.roe < filters.minRoe) continue;
-    if (filters.minFcfMargin && f.fcfMargin < filters.minFcfMargin) continue;
-    if (filters.minBuffettScore && f.buffettScore < filters.minBuffettScore) continue;
-
-    // Strategy filter — note: for financial companies (banks, insurance) FCF margin and debt ratios don't apply the same way
+    const isETF = f.type === 'etf';
     const isFinancial = ['Banking Scale','Investment Banking','Brand/Network','Payment Network','Diversified/Insurance'].includes(f.moat);
 
+    // ETFs skip most stock filters except price, dividend, and buffett score
+    if (!isETF) {
+      if (filters.maxPe && pe && pe > filters.maxPe) continue;
+      if (filters.minRoe && f.roe < filters.minRoe) continue;
+      if (filters.minFcfMargin && f.fcfMargin < filters.minFcfMargin) continue;
+      if (filters.maxDebt && f.debt > filters.maxDebt) continue;
+    }
+    if (filters.maxPrice && price > filters.maxPrice) continue;
+    if (filters.minDividend && f.yield < filters.minDividend) continue;
+    if (filters.minBuffettScore && f.buffettScore < filters.minBuffettScore) continue;
+
+    // Strategy filter
     let include = false;
-    switch (strategy) {
-      case 'buffett':
-        // Buffett owns banks, so don't penalise financials for FCF margin
-        include = f.roe > 15 && (!pe || pe < 30) && f.debt < 2.0 && (isFinancial || f.fcfMargin > 10);
-        break;
-      case 'munger':
-        // Munger wants moat + high ROE
-        include = f.roe > 20 && f.moat && f.moat !== 'Unknown' && (isFinancial || f.fcfMargin > 15);
-        break;
-      case 'lynch':
-        // Lynch: cheap (low P/E) but only filter if P/E is known
-        include = f.roe > 10 && (!pe || pe < 20);
-        break;
-      case 'graham':
-        // Graham: cheap + dividend + low debt. P/E filter only if known.
-        include = f.yield > 2 && f.debt < 1.0 && f.roe > 5 && (!pe || pe < 15);
-        break;
-      case 'dividend':
-        include = f.yield > 2.5 && f.roe > 10;
-        break;
-      case 'growth':
-        include = f.roe > 25 && (isFinancial || f.fcfMargin > 20);
-        break;
-      case 'all':
-        include = true;
-        break;
-      default:
-        include = true;
+    if (isETF) {
+      // ETFs always show unless strategy is very stock-specific
+      switch (strategy) {
+        case 'dividend': include = f.yield > 1.5; break;
+        case 'growth':   include = f.roe > 10; break;
+        case 'all':      include = true; break;
+        default:         include = f.buffettScore >= 60; // show quality ETFs in all strategies
+      }
+    } else {
+      switch (strategy) {
+        case 'buffett':
+          include = f.roe > 15 && (!pe || pe < 30) && f.debt < 2.0 && (isFinancial || f.fcfMargin > 10);
+          break;
+        case 'munger':
+          include = f.roe > 20 && f.moat && f.moat !== 'Unknown' && (isFinancial || f.fcfMargin > 15);
+          break;
+        case 'lynch':
+          include = f.roe > 10 && (!pe || pe < 20);
+          break;
+        case 'graham':
+          include = f.yield > 2 && f.debt < 1.0 && f.roe > 5 && (!pe || pe < 15);
+          break;
+        case 'dividend':
+          include = f.yield > 2.5 && f.roe > 10;
+          break;
+        case 'growth':
+          include = f.roe > 25 && (isFinancial || f.fcfMargin > 20);
+          break;
+        case 'all':
+          include = true;
+          break;
+        default:
+          include = true;
+      }
     }
 
     if (!include) continue;
@@ -368,7 +432,12 @@ app.post('/api/screen', async (req, res) => {
       buffettScore: score,
       marketCap,
       changePercent: parseFloat(change.toFixed(2)),
-      source: yahoo ? 'live' : 'demo'
+      source: yahoo ? 'live' : 'demo',
+      // ETF-specific fields
+      isETF: isETF,
+      etfCategory: f.category || null,
+      expenseRatio: f.expenseRatio || null,
+      holdings: f.holdings || null
     });
 
     await new Promise(r => setTimeout(r, 80));

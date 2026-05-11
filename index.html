@@ -508,19 +508,33 @@
     chgEl.style.color = chg>=0 ? 'var(--green)' : 'var(--red)';
     document.getElementById('chartArea').innerHTML = '<div class="chart-loading">Loading chart...</div>';
 
-    document.getElementById('kpiValuation').innerHTML = [
-      kpiRow('Current Price', '$'+stock.price, '', 'What one share costs today'),
-      kpiRow('P/E Ratio — Price to Earnings', stock.peRatio||'—', stock.peRatio?ratingInv(stock.peRatio,20,30):'', 'You pay this many $ per $1 of profit · Buffett: &lt;30'),
-      kpiRow('Dividend Yield', stock.dividendYield+'%', rating(stock.dividendYield,3,1.5), 'Annual cash paid to you per share · Graham: &gt;2%'),
-      kpiRow('Economic Moat', stock.moat||'—', '', 'Buffett\'s term for competitive advantage that protects the business'),
-    ].join('');
-
-    document.getElementById('kpiQuality').innerHTML = [
-      kpiRow('ROE — Return on Equity', stock.roe+'%', rating(stock.roe,20,15), 'Profit per $100 of your investment · Buffett: &gt;15%'),
-      kpiRow('FCF Margin — Free Cash Flow', stock.fcfMargin+'%', rating(stock.fcfMargin,20,10), 'Real cash kept after all costs · Buffett: &gt;10%'),
-      kpiRow('Debt / Equity Ratio', stock.debtToEquity, ratingInv(stock.debtToEquity,1,2), 'Debt vs what shareholders own · Safe: &lt;2'),
-      kpiRow('Beta — Volatility', stock.beta||'—', '', '1.0 = moves with market · &gt;1.5 = high volatility · &lt;0.8 = stable'),
-    ].join('');
+    if (stock.isETF) {
+      document.getElementById('kpiValuation').innerHTML = [
+        kpiRow('Current Price', '$'+stock.price),
+        kpiRow('Category', stock.etfCategory || '—'),
+        kpiRow('Dividend Yield', stock.dividendYield+'%', rating(stock.dividendYield,3,1.5), 'Annual income paid to holders'),
+        kpiRow('Number of Holdings', stock.holdings ? stock.holdings.toLocaleString() : '—', '', 'How many stocks/bonds inside the ETF'),
+      ].join('');
+      document.getElementById('kpiQuality').innerHTML = [
+        kpiRow('Expense Ratio', stock.expenseRatio ? stock.expenseRatio+'%' : '—', stock.expenseRatio ? ratingInv(stock.expenseRatio, 0.1, 0.5) : '', 'Annual fee charged — lower is better'),
+        kpiRow('10-Year Annualised Return', stock.roe+'%', rating(stock.roe, 10, 7), 'Average yearly return over 10 years'),
+        kpiRow('What it tracks', stock.moat || '—'),
+        kpiRow('Debt / Leverage', 'None — ETFs hold assets, no debt'),
+      ].join('');
+    } else {
+      document.getElementById('kpiValuation').innerHTML = [
+        kpiRow('Current Price', '$'+stock.price),
+        kpiRow('P/E Ratio — Price to Earnings', stock.peRatio||'—', stock.peRatio?ratingInv(stock.peRatio,20,30):'', 'You pay this many $ per $1 of profit · Buffett: &lt;30'),
+        kpiRow('Dividend Yield', stock.dividendYield+'%', rating(stock.dividendYield,3,1.5), 'Annual cash paid to you per share · Graham: &gt;2%'),
+        kpiRow('Economic Moat', stock.moat||'—', '', 'Competitive advantage protecting the business'),
+      ].join('');
+      document.getElementById('kpiQuality').innerHTML = [
+        kpiRow('ROE — Return on Equity', stock.roe+'%', rating(stock.roe,20,15), 'Profit per $100 of your investment · Buffett: &gt;15%'),
+        kpiRow('FCF Margin — Free Cash Flow', stock.fcfMargin+'%', rating(stock.fcfMargin,20,10), 'Real cash kept after all costs · Buffett: &gt;10%'),
+        kpiRow('Debt / Equity Ratio', stock.debtToEquity, ratingInv(stock.debtToEquity,1,2), 'Debt vs what shareholders own · Safe: &lt;2'),
+        kpiRow('Beta — Volatility', stock.beta||'—', '', '1.0 = moves with market · &gt;1.5 = high volatility'),
+      ].join('');
+    }
 
     const score = stock.buffettScore||0;
     document.getElementById('verdictScore').textContent = score+' / 100';
@@ -683,24 +697,34 @@
       const changeSign = s.changePercent >= 0 ? '+' : '';
       const sc = s.buffettScore || 0;
       const dot = s.source === 'live' ? '<span class="live-dot"></span>' : '<span class="demo-dot"></span>';
+      const etfBadge = s.isETF ? `<span style="font-size:8px;background:rgba(99,102,241,0.2);color:#818cf8;border:1px solid rgba(99,102,241,0.3);padding:1px 6px;border-radius:8px;margin-left:4px">ETF</span>` : '';
+      const kpisHtml = s.isETF ? `
+          <div class="card-kpis">
+            <div class="kpi"><strong>${s.dividendYield}%</strong>Yield</div>
+            <div class="kpi"><strong>${s.expenseRatio ? s.expenseRatio+'%' : '—'}</strong>Expense</div>
+            <div class="kpi"><strong>${s.roe}%</strong>10yr Ret</div>
+            <div class="kpi"><strong>${s.holdings ? s.holdings.toLocaleString() : '—'}</strong>Holdings</div>
+          </div>
+          <div class="moat-tag" style="font-size:7px">📦 ${s.etfCategory || 'ETF'}</div>` : `
+          <div class="card-kpis">
+            <div class="kpi"><strong>${s.peRatio || '—'}</strong>P/E <span title="Price divided by annual earnings. Lower is cheaper.">ℹ</span></div>
+            <div class="kpi"><strong>${s.roe}%</strong>ROE <span title="Return on Equity: profit made per $100 of shareholder investment.">ℹ</span></div>
+            <div class="kpi"><strong>${s.fcfMargin}%</strong>FCF <span title="Free Cash Flow Margin: real cash kept after all expenses.">ℹ</span></div>
+            <div class="kpi"><strong>${s.dividendYield}%</strong>Yield <span title="Annual dividend as % of stock price.">ℹ</span></div>
+            <div class="kpi"><strong>${s.debtToEquity}</strong>D/E <span title="Debt to Equity: how much the company owes vs owns.">ℹ</span></div>
+            <div class="kpi"><strong>${s.beta || '—'}</strong>Beta <span title="Volatility. 1.0 = moves with market.">ℹ</span></div>
+          </div>
+          ${s.moat ? `<div class="moat-tag">🏰 ${s.moat}</div>` : ''}`;
       return `
         <div class="stock-card" onclick='openModal(${JSON.stringify(s)})'>
           <div class="card-header">
-            <div class="card-ticker">${dot}${s.ticker}</div>
+            <div class="card-ticker">${dot}${s.ticker}${etfBadge}</div>
             <div class="card-score ${scoreClass(sc)}">${sc}</div>
           </div>
           <div class="card-name">${s.name}</div>
           <div class="card-price">$${s.price}</div>
           <div class="card-change ${changeClass}">${changeSign}${s.changePercent}% today</div>
-          <div class="card-kpis">
-            <div class="kpi"><strong>${s.peRatio || '—'}</strong>P/E <span title="Price divided by annual earnings. Lower is cheaper.">ℹ</span></div>
-            <div class="kpi"><strong>${s.roe}%</strong>ROE <span title="Return on Equity: profit made per $100 of shareholder investment. 15%+ is Buffett's minimum.">ℹ</span></div>
-            <div class="kpi"><strong>${s.fcfMargin}%</strong>FCF <span title="Free Cash Flow Margin: real cash kept after all expenses. Buffett loves high FCF.">ℹ</span></div>
-            <div class="kpi"><strong>${s.dividendYield}%</strong>Yield <span title="Annual dividend payment as % of stock price. Your cash return just for holding.">ℹ</span></div>
-            <div class="kpi"><strong>${s.debtToEquity}</strong>D/E <span title="Debt to Equity: how much the company owes vs owns. Under 2 is safe.">ℹ</span></div>
-            <div class="kpi"><strong>${s.beta || '—'}</strong>Beta <span title="Volatility vs the market. Beta 1 = moves with market. Over 1.5 = very volatile.">ℹ</span></div>
-          </div>
-          ${s.moat ? `<div class="moat-tag">🏰 ${s.moat}</div>` : ''}
+          ${kpisHtml}
         </div>`;
     }).join('');
   }
