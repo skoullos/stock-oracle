@@ -43,11 +43,13 @@
     .strat-desc { font-size: 10px; color: var(--muted); margin-top: 8px; padding: 8px 12px; background: var(--card); border-radius: 6px; border-left: 2px solid var(--accent); }
 
     /* FILTERS */
-    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
-    .filter-item label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
-    .filter-item label strong { color: var(--accent2); }
-    input[type="range"] { width: 100%; accent-color: var(--accent); }
-    .filter-hint { font-size: 9px; color: var(--muted); margin-top: 3px; }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .filter-item { display: flex; flex-direction: column; }
+    .filter-item label { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); margin-bottom: 8px; white-space: nowrap; }
+    .filter-item label span { flex: 1; }
+    .filter-item label strong { color: var(--accent2); font-size: 12px; min-width: 40px; text-align: right; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    .filter-hint { font-size: 9px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
 
     /* SCAN BUTTON */
     .scan-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -144,43 +146,43 @@
       <div class="filter-grid">
 
         <div class="filter-item">
-          <label>Max P/E Ratio <strong id="peVal">30</strong></label>
+          <label><span>Max P/E Ratio</span><strong id="peVal">30</strong></label>
           <input type="range" id="maxPe" min="5" max="100" value="30" step="1" oninput="document.getElementById('peVal').textContent=this.value">
           <div class="filter-hint">Buffett: prefers under 25 · Graham: under 15</div>
         </div>
 
         <div class="filter-item">
-          <label>Min ROE % <strong id="roeVal">15%</strong></label>
+          <label><span>Min ROE %</span><strong id="roeVal">15%</strong></label>
           <input type="range" id="minRoe" min="0" max="50" value="15" step="1" oninput="document.getElementById('roeVal').textContent=this.value+'%'">
           <div class="filter-hint">Buffett: wants 15%+ consistently</div>
         </div>
 
         <div class="filter-item">
-          <label>Min FCF Margin % <strong id="fcfVal">10%</strong></label>
+          <label><span>Min FCF Margin %</span><strong id="fcfVal">10%</strong></label>
           <input type="range" id="minFcfMargin" min="0" max="50" value="10" step="1" oninput="document.getElementById('fcfVal').textContent=this.value+'%'">
           <div class="filter-hint">Key Buffett metric: cash generation power</div>
         </div>
 
         <div class="filter-item">
-          <label>Min Dividend Yield % <strong id="divVal">0%</strong></label>
+          <label><span>Min Dividend Yield %</span><strong id="divVal">0%</strong></label>
           <input type="range" id="minDividend" min="0" max="10" value="0" step="0.5" oninput="document.getElementById('divVal').textContent=this.value+'%'">
           <div class="filter-hint">Graham: prefers 2%+ · Dividend strategy: 3%+</div>
         </div>
 
         <div class="filter-item">
-          <label>Max Debt/Equity <strong id="debtVal">2.0</strong></label>
+          <label><span>Max Debt/Equity</span><strong id="debtVal">2.0</strong></label>
           <input type="range" id="maxDebt" min="0" max="10" value="2" step="0.5" oninput="document.getElementById('debtVal').textContent=this.value">
           <div class="filter-hint">Buffett: avoids high debt companies</div>
         </div>
 
         <div class="filter-item">
-          <label>Max Stock Price $ <strong id="priceVal">Any</strong></label>
+          <label><span>Max Stock Price</span><strong id="priceVal">Any</strong></label>
           <input type="range" id="maxPrice" min="0" max="2000" value="2000" step="50" oninput="document.getElementById('priceVal').textContent=this.value>=2000?'Any':'$'+this.value">
           <div class="filter-hint">Price does not affect quality — filter by budget</div>
         </div>
 
         <div class="filter-item">
-          <label>Min Buffett Score <strong id="bscoreVal">0</strong></label>
+          <label><span>Min Buffett Score</span><strong id="bscoreVal">0</strong></label>
           <input type="range" id="minBuffettScore" min="0" max="95" value="0" step="5" oninput="document.getElementById('bscoreVal').textContent=this.value">
           <div class="filter-hint">Composite quality score (0–100)</div>
         </div>
