@@ -105,6 +105,45 @@
     .progress-bar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
     .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
 
+    /* TOOLTIPS */
+    .tip { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 9px; cursor: help; margin-left: 5px; font-style: normal; position: relative; flex-shrink: 0; font-family: sans-serif; }
+    .tip:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c1c1f;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      font-size: 11px;
+      line-height: 1.5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      width: 240px;
+      white-space: normal;
+      z-index: 9999;
+      pointer-events: none;
+      text-align: left;
+      font-weight: normal;
+      letter-spacing: 0;
+      text-transform: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    .tip:hover::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--accent);
+      z-index: 9999;
+    }
+    /* Flip tooltip to bottom if near top of screen */
+    .tip.flip-down:hover::after { top: calc(100% + 8px); bottom: auto; }
+    .tip.flip-down:hover::before { top: calc(100% + 2px); bottom: auto; border-top-color: transparent; border-bottom-color: var(--accent); }
+
     /* MODAL */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.open { display: flex; }
@@ -169,64 +208,64 @@
 
     <!-- STRATEGY -->
     <div class="panel">
-      <div class="panel-title">Investor Strategy</div>
+      <div class="panel-title">Investor Strategy <i class="tip flip-down" data-tip="Each strategy uses a different set of rules inspired by legendary investors. Pick one and the filters below will automatically adjust to match their philosophy.">?</i></div>
       <div class="strategy-grid">
-        <button class="strat-btn active" onclick="setStrategy('buffett',this)">🎩 Warren Buffett</button>
-        <button class="strat-btn" onclick="setStrategy('munger',this)">🧠 Charlie Munger</button>
-        <button class="strat-btn" onclick="setStrategy('lynch',this)">📈 Peter Lynch</button>
-        <button class="strat-btn" onclick="setStrategy('graham',this)">📐 Ben Graham</button>
-        <button class="strat-btn" onclick="setStrategy('dividend',this)">💰 Dividend Income</button>
-        <button class="strat-btn" onclick="setStrategy('growth',this)">🚀 High Growth</button>
-        <button class="strat-btn" onclick="setStrategy('all',this)">🌍 Show All</button>
+        <button class="strat-btn active" onclick="setStrategy('buffett',this)">🎩 Warren Buffett <i class="tip flip-down" data-tip="The world's greatest investor. Buys wonderful companies at fair prices and holds forever. Looks for strong profits, low debt, and a durable competitive edge (moat).">?</i></button>
+        <button class="strat-btn" onclick="setStrategy('munger',this)">🧠 Charlie Munger <i class="tip flip-down" data-tip="Buffett's partner. Even more focused on quality. Said: 'I prefer a wonderful company at a fair price over a fair company at a wonderful price.' Demands clear competitive advantages.">?</i></button>
+        <button class="strat-btn" onclick="setStrategy('lynch',this)">📈 Peter Lynch <i class="tip flip-down" data-tip="Famous for 'invest in what you know'. Managed the best-performing fund of his era. Looks for undervalued companies growing faster than their P/E ratio suggests.">?</i></button>
+        <button class="strat-btn" onclick="setStrategy('graham',this)">📐 Ben Graham <i class="tip flip-down" data-tip="The father of value investing and Buffett's teacher. Very strict: only buys stocks trading at a big discount to their true value. Requires dividends and low debt.">?</i></button>
+        <button class="strat-btn" onclick="setStrategy('dividend',this)">💰 Dividend Income <i class="tip flip-down" data-tip="Strategy focused on earning regular cash payments (dividends) from stocks. Good for passive income. Prioritises companies that consistently pay and grow their dividends.">?</i></button>
+        <button class="strat-btn" onclick="setStrategy('growth',this)">🚀 High Growth <i class="tip flip-down" data-tip="Targets companies that generate exceptional returns and reinvest profits aggressively. Usually tech or platform businesses. Higher risk, higher potential reward.">?</i></button>
+        <button class="strat-btn" onclick="setStrategy('all',this)">🌍 Show All <i class="tip flip-down" data-tip="Removes the strategy filter entirely. Shows all stocks that pass your manual filter settings, sorted by Buffett Score.">?</i></button>
       </div>
       <div class="strat-desc" id="stratDesc">ROE &gt; 15% · FCF Margin &gt; 10% · P/E &lt; 30 · Debt/Equity &lt; 2 — Companies with durable competitive advantage and consistent earnings</div>
     </div>
 
     <!-- FILTERS -->
     <div class="panel">
-      <div class="panel-title">Fine-Tune Filters</div>
+      <div class="panel-title">Fine-Tune Filters <i class="tip flip-down" data-tip="These sliders let you customise exactly what kind of stocks appear. When you select a strategy above, they auto-adjust — but you can always fine-tune them manually.">?</i></div>
       <div class="filter-grid">
 
         <div class="filter-item">
-          <label><span>Max P/E Ratio</span><strong id="peVal">30</strong></label>
+          <label><span>Max P/E Ratio <i class="tip" data-tip="Price-to-Earnings ratio. Shows how many years of profits you're paying for. A P/E of 20 means you pay $20 for every $1 of annual profit. Lower = cheaper. Buffett accepts up to 30 for great companies. Graham wanted under 15.">?</i></span><strong id="peVal">30</strong></label>
           <input type="range" id="maxPe" min="5" max="100" value="30" step="1" oninput="document.getElementById('peVal').textContent=this.value">
-          <div class="filter-hint">Buffett: prefers under 25 · Graham: under 15</div>
+          <div class="filter-hint">Buffett: under 30 · Graham: under 15 · Higher P/E = more expensive</div>
         </div>
 
         <div class="filter-item">
-          <label><span>Min ROE %</span><strong id="roeVal">15%</strong></label>
+          <label><span>Min ROE % <i class="tip" data-tip="Return on Equity. How much profit a company makes for every dollar shareholders have invested. Think of it as the company's report card on using your money. 15% means for every $100 invested, they make $15 profit. Buffett wants 15%+ consistently.">?</i></span><strong id="roeVal">15%</strong></label>
           <input type="range" id="minRoe" min="0" max="50" value="15" step="1" oninput="document.getElementById('roeVal').textContent=this.value+'%'">
-          <div class="filter-hint">Buffett: wants 15%+ consistently</div>
+          <div class="filter-hint">Buffett: 15%+ · Higher = company uses capital more efficiently</div>
         </div>
 
         <div class="filter-item">
-          <label><span>Min FCF Margin %</span><strong id="fcfVal">10%</strong></label>
+          <label><span>Min FCF Margin % <i class="tip" data-tip="Free Cash Flow Margin. The percentage of revenue left as actual cash after paying all expenses and investments. This is real money the company can use to pay dividends, buy back shares, or expand. Buffett loves cash-generating businesses. 15%+ is excellent.">?</i></span><strong id="fcfVal">10%</strong></label>
           <input type="range" id="minFcfMargin" min="0" max="50" value="10" step="1" oninput="document.getElementById('fcfVal').textContent=this.value+'%'">
-          <div class="filter-hint">Key Buffett metric: cash generation power</div>
+          <div class="filter-hint">Buffett's favourite metric · 10%+ good · 20%+ excellent</div>
         </div>
 
         <div class="filter-item">
-          <label><span>Min Dividend Yield %</span><strong id="divVal">0%</strong></label>
+          <label><span>Min Dividend Yield % <i class="tip" data-tip="Dividend Yield is the annual cash payment you receive as a percentage of the stock price. If a stock costs $100 and pays $3 per year, the yield is 3%. This is like getting rent from owning the stock. Graham required dividends. Income investors target 3%+.">?</i></span><strong id="divVal">0%</strong></label>
           <input type="range" id="minDividend" min="0" max="10" value="0" step="0.5" oninput="document.getElementById('divVal').textContent=this.value+'%'">
-          <div class="filter-hint">Graham: prefers 2%+ · Dividend strategy: 3%+</div>
+          <div class="filter-hint">Set to 0 if you don't need income · Graham: 2%+ · Income investors: 3%+</div>
         </div>
 
         <div class="filter-item">
-          <label><span>Max Debt/Equity</span><strong id="debtVal">2.0</strong></label>
+          <label><span>Max Debt/Equity <i class="tip" data-tip="Debt-to-Equity ratio. How much debt the company carries compared to what shareholders own. A ratio of 1.0 means the company owes as much as shareholders own. A ratio of 3.0 means it owes 3x more. Buffett avoids heavily indebted companies — debt is dangerous in downturns.">?</i></span><strong id="debtVal">2.0</strong></label>
           <input type="range" id="maxDebt" min="0" max="10" value="2" step="0.5" oninput="document.getElementById('debtVal').textContent=this.value">
-          <div class="filter-hint">Buffett: avoids high debt companies</div>
+          <div class="filter-hint">Under 1 = conservative · Under 2 = acceptable · Over 3 = risky</div>
         </div>
 
         <div class="filter-item">
-          <label><span>Max Stock Price</span><strong id="priceVal">Any</strong></label>
+          <label><span>Max Stock Price <i class="tip" data-tip="Filter by how much a single share costs. Note: price alone doesn't tell you if a stock is cheap or expensive — a $10 stock can be overvalued, a $1000 stock can be a bargain. Use this only to match your budget.">?</i></span><strong id="priceVal">Any</strong></label>
           <input type="range" id="maxPrice" min="0" max="2000" value="2000" step="50" oninput="document.getElementById('priceVal').textContent=this.value>=2000?'Any':'$'+this.value">
-          <div class="filter-hint">Price does not affect quality — filter by budget</div>
+          <div class="filter-hint">Price ≠ value. Use only to filter by budget.</div>
         </div>
 
         <div class="filter-item">
-          <label><span>Min Buffett Score</span><strong id="bscoreVal">0</strong></label>
+          <label><span>Min Buffett Score <i class="tip" data-tip="Our composite quality score from 0 to 100 that combines ROE, FCF Margin, P/E ratio, debt, and dividend yield — weighted the way Buffett would. 80+ means exceptional quality. 60–79 is good. Below 60 has significant weaknesses by Buffett's standards.">?</i></span><strong id="bscoreVal">0</strong></label>
           <input type="range" id="minBuffettScore" min="0" max="95" value="0" step="5" oninput="document.getElementById('bscoreVal').textContent=this.value">
-          <div class="filter-hint">Composite quality score (0–100)</div>
+          <div class="filter-hint">0 = no filter · 60+ = good quality · 80+ = exceptional</div>
         </div>
 
       </div>
@@ -398,7 +437,7 @@
 
       <!-- BUFFETT VERDICT -->
       <div class="verdict">
-        <div class="verdict-title">🎩 Buffett Score</div>
+        <div class="verdict-title">🎩 Buffett Score <i class="tip" data-tip="A score from 0–100 that measures how closely this company matches Warren Buffett's investment criteria. It combines ROE, Free Cash Flow, P/E ratio, debt levels, and dividend yield. 80+ = exceptional. 60–79 = good. Below 60 = significant weaknesses.">?</i></div>
         <div class="verdict-score" id="verdictScore">—</div>
         <div class="verdict-label" id="verdictLabel">—</div>
         <div class="verdict-bar"><div class="verdict-fill" id="verdictFill"></div></div>
@@ -469,17 +508,17 @@
     document.getElementById('chartArea').innerHTML = '<div class="chart-loading">Loading chart...</div>';
 
     document.getElementById('kpiValuation').innerHTML = [
-      kpiRow('Price', '$'+stock.price),
-      kpiRow('P/E Ratio', stock.peRatio||'—', stock.peRatio?ratingInv(stock.peRatio,20,30):'', 'Buffett: &lt;30'),
-      kpiRow('Dividend Yield', stock.dividendYield+'%', rating(stock.dividendYield,3,1.5), 'Graham: &gt;2%'),
-      kpiRow('Economic Moat', stock.moat||'—'),
+      kpiRow('Current Price', '$'+stock.price, '', 'What one share costs today'),
+      kpiRow('P/E Ratio — Price to Earnings', stock.peRatio||'—', stock.peRatio?ratingInv(stock.peRatio,20,30):'', 'You pay this many $ per $1 of profit · Buffett: &lt;30'),
+      kpiRow('Dividend Yield', stock.dividendYield+'%', rating(stock.dividendYield,3,1.5), 'Annual cash paid to you per share · Graham: &gt;2%'),
+      kpiRow('Economic Moat', stock.moat||'—', '', 'Buffett\'s term for competitive advantage that protects the business'),
     ].join('');
 
     document.getElementById('kpiQuality').innerHTML = [
-      kpiRow('Return on Equity (ROE)', stock.roe+'%', rating(stock.roe,20,15), 'Buffett: &gt;15%'),
-      kpiRow('FCF Margin', stock.fcfMargin+'%', rating(stock.fcfMargin,20,10), 'Buffett: &gt;10%'),
-      kpiRow('Debt / Equity', stock.debtToEquity, ratingInv(stock.debtToEquity,1,2), 'Buffett: &lt;2'),
-      kpiRow('Beta', stock.beta||'—'),
+      kpiRow('ROE — Return on Equity', stock.roe+'%', rating(stock.roe,20,15), 'Profit per $100 of your investment · Buffett: &gt;15%'),
+      kpiRow('FCF Margin — Free Cash Flow', stock.fcfMargin+'%', rating(stock.fcfMargin,20,10), 'Real cash kept after all costs · Buffett: &gt;10%'),
+      kpiRow('Debt / Equity Ratio', stock.debtToEquity, ratingInv(stock.debtToEquity,1,2), 'Debt vs what shareholders own · Safe: &lt;2'),
+      kpiRow('Beta — Volatility', stock.beta||'—', '', '1.0 = moves with market · &gt;1.5 = high volatility · &lt;0.8 = stable'),
     ].join('');
 
     const score = stock.buffettScore||0;
@@ -653,12 +692,12 @@
           <div class="card-price">$${s.price}</div>
           <div class="card-change ${changeClass}">${changeSign}${s.changePercent}% today</div>
           <div class="card-kpis">
-            <div class="kpi"><strong>${s.peRatio || '—'}</strong>P/E Ratio</div>
-            <div class="kpi"><strong>${s.roe}%</strong>ROE</div>
-            <div class="kpi"><strong>${s.fcfMargin}%</strong>FCF Margin</div>
-            <div class="kpi"><strong>${s.dividendYield}%</strong>Dividend</div>
-            <div class="kpi"><strong>${s.debtToEquity}</strong>Debt/Eq</div>
-            <div class="kpi"><strong>${s.beta || '—'}</strong>Beta</div>
+            <div class="kpi"><strong>${s.peRatio || '—'}</strong>P/E <span title="Price divided by annual earnings. Lower is cheaper.">ℹ</span></div>
+            <div class="kpi"><strong>${s.roe}%</strong>ROE <span title="Return on Equity: profit made per $100 of shareholder investment. 15%+ is Buffett's minimum.">ℹ</span></div>
+            <div class="kpi"><strong>${s.fcfMargin}%</strong>FCF <span title="Free Cash Flow Margin: real cash kept after all expenses. Buffett loves high FCF.">ℹ</span></div>
+            <div class="kpi"><strong>${s.dividendYield}%</strong>Yield <span title="Annual dividend payment as % of stock price. Your cash return just for holding.">ℹ</span></div>
+            <div class="kpi"><strong>${s.debtToEquity}</strong>D/E <span title="Debt to Equity: how much the company owes vs owns. Under 2 is safe.">ℹ</span></div>
+            <div class="kpi"><strong>${s.beta || '—'}</strong>Beta <span title="Volatility vs the market. Beta 1 = moves with market. Over 1.5 = very volatile.">ℹ</span></div>
           </div>
           ${s.moat ? `<div class="moat-tag">🏰 ${s.moat}</div>` : ''}
         </div>`;
