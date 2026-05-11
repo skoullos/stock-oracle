@@ -37,6 +37,8 @@
     .header-left { display: flex; align-items: baseline; gap: 10px; }
     .header-left span { font-size: 9px; color: var(--gold); letter-spacing: 0.35em; text-transform: uppercase; }
     .header-left h1 { margin: 0; font-size: 18px; font-weight: 700; color: var(--accent-light); }
+    .header-right { font-size: 9px; color: var(--text-muted); }
+    .header-right.live { color: var(--success); }
     .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
     .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
     .tab-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 10px 18px; border-radius: 8px; cursor: pointer; font-family: Georgia; font-weight: 700; }
@@ -57,7 +59,7 @@
     .stock-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; }
     .stock-card:hover { transform: translateY(-2px); border-color: var(--accent); }
     .stock-ticker { font-size: 14px; font-weight: 700; color: var(--accent-light); margin-bottom: 2px; }
-    .stock-company { font-size: 8px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.3; }
+    .stock-company { font-size: 8px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.3; min-height: 16px; }
     .stock-price { font-size: 13px; font-weight: 700; margin: 3px 0; }
     .stock-metric { font-size: 8px; color: var(--text-muted); margin: 2px 0; }
     .results { background: var(--bg-panel); border: 1px solid var(--success); border-radius: 12px; padding: 18px; display: none; }
@@ -69,6 +71,8 @@
     .stats-box strong { color: var(--accent-light); }
     .info-message { background: rgba(74, 222, 128, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
     .info-message.show { display: block; }
+    .warning-message { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--warning); color: var(--warning); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
+    .warning-message.show { display: block; }
     .footer { margin-top: 20px; font-size: 9px; color: var(--text-muted); text-align: center; padding-top: 12px; }
   </style>
 </head>
@@ -78,9 +82,11 @@
       <span>Berkshire</span>
       <h1>Stock Oracle</h1>
     </div>
+    <div class="header-right" id="apiStatus">Connecting to FMP...</div>
   </div>
 
   <div class="container">
+    <div class="warning-message" id="warningMessage"></div>
     <div class="info-message" id="infoMessage"></div>
 
     <div class="tabs">
@@ -126,7 +132,7 @@
         <button id="scanBtn" onclick="startScan()" style="flex: 1;">🚀 SCAN</button>
       </div>
 
-      <div id="scanStatus" style="font-size: 11px; color: var(--text-muted);">Ready to scan. Using realistic demo data.</div>
+      <div id="scanStatus" style="font-size: 11px; color: var(--text-muted);">Ready to scan. Connecting to FMP API for live data...</div>
     </div>
 
     <!-- RESULTS -->
@@ -151,9 +157,9 @@
       </div>
 
       <div class="stats-box" id="statsBox" style="display: none;">
+        <strong>Mode:</strong> <span id="mode">—</span> | 
         <strong>Cache Efficiency:</strong> <span id="efficiency">0</span>% | 
         <strong>API Calls:</strong> <span id="apiCalls">0</span> | 
-        <strong>Cache Hits:</strong> <span id="cacheHits">0</span> |
         <strong>Updated:</strong> <span id="lastUpdate">—</span>
       </div>
     </div>
@@ -168,6 +174,7 @@
     let currentStrategy = 'growth';
     let allResults = [];
     let isScanning = false;
+    let apiMode = 'unknown';
 
     function switchTab(tab, btn) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -186,11 +193,40 @@
       document.getElementById(id + 'Val').textContent = document.getElementById(id).value;
     }
 
+    function showWarning(msg) {
+      const elem = document.getElementById('warningMessage');
+      elem.textContent = '⚠️ ' + msg;
+      elem.classList.add('show');
+      setTimeout(() => { elem.classList.remove('show'); }, 7000);
+    }
+
     function showInfo(msg) {
       const elem = document.getElementById('infoMessage');
       elem.textContent = 'ℹ️ ' + msg;
       elem.classList.add('show');
       setTimeout(() => { elem.classList.remove('show'); }, 5000);
+    }
+
+    async function checkAPIStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/api/health`);
+        const data = await res.json();
+        
+        const statusEl = document.getElementById('apiStatus');
+        if (data.mode === 'live') {
+          statusEl.textContent = '✅ Live Data • FMP API Connected';
+          statusEl.classList.add('live');
+          apiMode = 'live';
+        } else {
+          statusEl.textContent = '⚠️ Demo Mode (FMP Key not set)';
+          statusEl.classList.remove('live');
+          apiMode = 'demo';
+          showWarning('FMP API key not configured. Set FMP_KEY in Vercel for live stock data.');
+        }
+      } catch (error) {
+        console.error('Health check failed:', error);
+        document.getElementById('apiStatus').textContent = '❌ API Error';
+      }
     }
 
     async function startScan() {
@@ -207,7 +243,7 @@
 
       const tickers = ['AAPL','MSFT','GOOGL','AMZN','NVDA','META','TSLA','BRK.B','JNJ','KO','PG','MCD','V','UNH','JPM','XOM','WMT','BAC','PFE','MA','LLY','AXP','CSCO','CRM','IBM','ACN','PEP','MMM','GS','CVX','VZ','T','NFLX','ADBE','INTC','DIS','BA','MRK','ABT','ABBV','WFC','LIN','HON','QCOM','SYK','DUK','RTX','FDX','COST'];
 
-      document.getElementById('scanStatus').textContent = 'Scanning ' + tickers.length + ' stocks...';
+      document.getElementById('scanStatus').textContent = `Scanning ${tickers.length} stocks from FMP API...`;
 
       try {
         const res = await fetch(`${API_BASE}/api/screen`, {
@@ -227,19 +263,24 @@
 
         displayResults();
         
+        document.getElementById('mode').textContent = data.mode === 'live' ? '🟢 Live' : '🟡 Demo';
         document.getElementById('efficiency').textContent = data.efficiency || 0;
         document.getElementById('apiCalls').textContent = data.apiCallsUsed || 0;
-        document.getElementById('cacheHits').textContent = data.cacheHits || 0;
         document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         document.getElementById('statsBox').style.display = 'block';
 
         document.getElementById('scanStatus').textContent = `✓ Found ${data.count || 0} stocks matching your ${currentStrategy} strategy`;
-        showInfo(`Scan complete! ${data.count || 0} stocks matched.`);
+        if (data.mode === 'live') {
+          showInfo(`✅ Live data! ${data.count || 0} stocks matched.`);
+        } else {
+          showWarning(`Demo data. ${data.count || 0} stocks matched. Set FMP_KEY for live prices.`);
+        }
 
         switchTab('results', document.querySelectorAll('.tabs button')[1]);
       } catch (error) {
         console.error('Scan error:', error);
         document.getElementById('scanStatus').textContent = `❌ Error: ${error.message}`;
+        showWarning('Scan failed. Check if FMP_KEY is configured.');
       } finally {
         document.getElementById('scanBtn').disabled = false;
         isScanning = false;
@@ -251,7 +292,7 @@
       grid.innerHTML = allResults.map(s => `
         <div class="stock-card">
           <div class="stock-ticker">${s.ticker}</div>
-          <div class="stock-company">${s.name}</div>
+          <div class="stock-company">${s.name || 'N/A'}</div>
           <div class="stock-price">$${parseFloat(s.price).toFixed(2)}</div>
           <div class="stock-metric">P/E: <strong>${s.peRatio || '—'}</strong></div>
           <div class="stock-metric">ROE: <strong>${s.roe}%</strong></div>
@@ -291,6 +332,7 @@
   <div class="header">
     <h1>Stock Oracle Report</h1>
     <p>Generated: ${new Date().toLocaleString()}</p>
+    <p>Data Source: ${apiMode === 'live' ? '✅ FMP API (Live)' : '⚠️ Demo Mode'}</p>
   </div>
   <table>
     <tr><th>Ticker</th><th>Company Name</th><th>Price</th><th>P/E</th><th>ROE</th><th>Dividend</th><th>Sector</th></tr>
@@ -324,6 +366,7 @@
     }
 
     window.addEventListener('load', () => {
+      checkAPIStatus();
       showInfo('Stock screener ready. Click SCAN to start.');
     });
   </script>
